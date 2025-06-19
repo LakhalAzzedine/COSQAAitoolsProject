@@ -36,7 +36,7 @@ export interface EndpointConfig {
 
 // Default endpoint configuration - easily configurable
 export const defaultEndpointConfig: EndpointConfig = {
-  baseUrl: import.meta.env.VITE_BACKEND_URL || "http://localhost:3001",
+  baseUrl: import.meta.env.VITE_BACKEND_URL || "http://localhost:3001",// Replace with your actual SVC backend URL
   monitoringBaseUrl: import.meta.env.VITE_MONITORING_URL || "http://localhost:3002",
   testGeneratorEndpoint: "/test-generator",
   acValidatorEndpoint: "/ac-validator",
