@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { JiraIntegration } from "./JiraIntegration";
@@ -9,6 +8,10 @@ import { XPathGenerator } from "./XPathGenerator";
 import { JSONAnalyzer } from "./JSONAnalyzer";
 import { TestGenerator } from "./TestGenerator";
 import { Tool } from "@/config/toolsConfig";
+import { ACValidator } from "./ACValidator";
+import { DefectAnalyzer } from "./DefectAnalyzer";
+import { KarateScriptWriter } from "./KarateScriptWriter";
+import { SmartSpecScriptWriter } from "./SmartSpecScriptWriter";
 
 interface ToolContentProps {
   selectedTool: Tool;
@@ -70,20 +73,53 @@ export function ToolContent({
     );
   }
 
-  // Special case for test generator
+  // Special case for test generator - no separate JIRA integration needed
   if (selectedTool.id === "test-generator") {
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {selectedTool.useJiraIntegration && (
-            <JiraIntegration onStoryFetched={onJiraStoryFetched} />
-          )}
-        </div>
-        <TestGenerator 
-          jiraData={jiraStoryData}
-          onConfigOpen={() => {}}
-        />
-      </div>
+      <TestGenerator 
+        jiraData={jiraStoryData}
+        onConfigOpen={() => {}}
+      />
+    );
+  }
+
+  // Special case for AC validator
+  if (selectedTool.id === "ac-validator") {
+    return (
+      <ACValidator 
+        jiraData={jiraStoryData}
+        onConfigOpen={() => {}}
+      />
+    );
+  }
+
+  // Special case for defect analyzer
+  if (selectedTool.id === "defect-analyzer") {
+    return (
+      <DefectAnalyzer 
+        jiraData={jiraStoryData}
+        onConfigOpen={() => {}}
+      />
+    );
+  }
+
+  // Special case for karate script writer
+  if (selectedTool.id === "karate-script-writer") {
+    return (
+      <KarateScriptWriter 
+        jiraData={jiraStoryData}
+        onConfigOpen={() => {}}
+      />
+    );
+  }
+
+  // Special case for smartspec script writer
+  if (selectedTool.id === "smartspec-script-writer") {
+    return (
+      <SmartSpecScriptWriter 
+        jiraData={jiraStoryData}
+        onConfigOpen={() => {}}
+      />
     );
   }
 

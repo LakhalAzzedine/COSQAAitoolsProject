@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Activity, CheckCircle, XCircle, Clock, Search, RefreshCw } from "lucide-react";
+import { Activity, CheckCircle, XCircle, Clock, Search, RefreshCw, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { EndpointDetailsModal } from "../EndpointDetailsModal";
@@ -22,6 +21,7 @@ interface Endpoint {
 }
 
 const CARDS_PER_PAGE = 8;
+const AUTO_REFRESH_INTERVAL = 30000; // 30 seconds
 
 export function EndpointsMonitor() {
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
@@ -33,10 +33,15 @@ export function EndpointsMonitor() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [teams, setTeams] = useState<string[]>([]);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>("");
+  const [connectionError, setConnectionError] = useState<string>("");
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const { toast } = useToast();
 
-  const fetchEndpoints = async () => {
+  const fetchEndpoints = async (showToast = true) => {
     setIsLoading(true);
+    setConnectionError("");
+    
     try {
       const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
       let config = defaultEndpointConfig;
@@ -47,46 +52,82 @@ export function EndpointsMonitor() {
       }
 
       const endpointUrl = getToolEndpointUrl('endpoints-monitor', config);
+      console.log(`Fetching endpoints from: ${endpointUrl}`);
+      
       const response = await fetch(endpointUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        mode: 'cors', // Explicitly set CORS mode
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
       
-      // Properly handle the teams array with correct typing
       const endpointsData: Endpoint[] = data.endpoints || [];
       const teamNames = endpointsData
         .map((endpoint: Endpoint) => endpoint.team)
         .filter((team: string): team is string => typeof team === 'string' && team.length > 0);
       const uniqueTeams: string[] = [...new Set(teamNames)];
+      
       setTeams(uniqueTeams);
       setEndpoints(endpointsData);
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      setConnectionError("");
 
-      console.log('Fetched endpoints:', endpointsData);
+      console.log('Successfully fetched endpoints:', endpointsData);
+      
+      if (showToast) {
+        toast({
+          title: "Data Refreshed",
+          description: `Loaded ${endpointsData.length} endpoints successfully`,
+        });
+      }
     } catch (error) {
       console.error('Error fetching endpoints:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch endpoints data from SVC cluster. Please check your connection.",
-        variant: "destructive",
-      });
+      
+      let errorMessage = "Unknown error occurred";
+      if (error instanceof TypeError && error.message === "Load failed") {
+        errorMessage = "CORS or Network Error - Cannot connect to SVC cluster. Please check if the backend is running and CORS is configured.";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setConnectionError(errorMessage);
       setEndpoints([]);
       setTeams([]);
+      
+      if (showToast) {
+        toast({
+          title: "Connection Error",
+          description: "Failed to fetch endpoints. Check console for details.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Initial fetch
   useEffect(() => {
-    fetchEndpoints();
+    fetchEndpoints(false);
   }, []);
+
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (!autoRefreshEnabled) return;
+
+    const interval = setInterval(() => {
+      fetchEndpoints(false);
+    }, AUTO_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [autoRefreshEnabled]);
 
   const filteredEndpoints = endpoints.filter(endpoint => {
     const matchesSearch = endpoint.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,7 +142,6 @@ export function EndpointsMonitor() {
   const startIndex = (currentPage - 1) * CARDS_PER_PAGE;
   const paginatedEndpoints = filteredEndpoints.slice(startIndex, startIndex + CARDS_PER_PAGE);
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedTeam, statusFilter]);
@@ -177,18 +217,44 @@ export function EndpointsMonitor() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Endpoints Monitor</h1>
           <p className="text-muted-foreground">Real-time health monitoring for all endpoints across teams</p>
+          {lastUpdateTime && (
+            <p className="text-xs text-muted-foreground">Last updated: {lastUpdateTime}</p>
+          )}
         </div>
         <div className="flex items-center space-x-4">
-          <Button onClick={fetchEndpoints} disabled={isLoading} variant="outline">
+          <Button 
+            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)} 
+            variant={autoRefreshEnabled ? "default" : "outline"}
+            size="sm"
+          >
+            <Clock className={`w-4 h-4 mr-2 ${autoRefreshEnabled ? 'animate-pulse' : ''}`} />
+            Auto-refresh {autoRefreshEnabled ? 'ON' : 'OFF'}
+          </Button>
+          <Button onClick={() => fetchEndpoints(true)} disabled={isLoading} variant="outline">
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-muted-foreground">Live Monitoring</span>
+            <div className={`w-3 h-3 rounded-full ${connectionError ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`}></div>
+            <span className="text-sm text-muted-foreground">
+              {connectionError ? 'Disconnected' : 'Live Monitoring'}
+            </span>
           </div>
         </div>
       </div>
+
+      {/* Connection Error Alert */}
+      {connectionError && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="flex items-center py-4">
+            <AlertTriangle className="w-5 h-5 text-red-500 mr-3" />
+            <div>
+              <h4 className="font-medium text-red-900">Connection Error</h4>
+              <p className="text-sm text-red-700">{connectionError}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
@@ -245,13 +311,13 @@ export function EndpointsMonitor() {
       )}
 
       {/* No Data State */}
-      {!isLoading && endpoints.length === 0 && (
+      {!isLoading && endpoints.length === 0 && !connectionError && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Activity className="w-12 h-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Endpoints Found</h3>
             <p className="text-muted-foreground text-center">
-              Unable to fetch endpoint data from the SVC cluster. Please check your connection and try refreshing.
+              No endpoint data available. Check your SVC cluster connection.
             </p>
           </CardContent>
         </Card>
