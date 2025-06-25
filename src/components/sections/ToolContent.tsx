@@ -1,17 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { JiraIntegration } from "./JiraIntegration";
-import { UrlIntegration } from "./UrlIntegration";
-import { BulkFileImport } from "./BulkFileImport";
-import { QAChatbot } from "./QAChatbot";
-import { XPathGenerator } from "./XPathGenerator";
-import { JSONAnalyzer } from "./JSONAnalyzer";
-import { TestGenerator } from "./TestGenerator";
+
+import { TestGenerator } from "@/components/sections/TestGenerator";
+import { ACValidator } from "@/components/sections/ACValidator";
+import { XPathGenerator } from "@/components/sections/XPathGenerator";
+import { JSONAnalyzer } from "@/components/sections/JSONAnalyzer";
+import { AdaAnalyzer } from "@/components/sections/AdaAnalyzer";
+import { Lighthouse } from "@/components/sections/Lighthouse";
+import { Chatbot } from "@/components/sections/Chatbot";
+import { DefectAnalyzer } from "@/components/sections/DefectAnalyzer";
+import { KarateScriptWriter } from "@/components/sections/KarateScriptWriter";
+import { SmartSpecScriptWriter } from "@/components/sections/SmartSpecScriptWriter";
 import { Tool } from "@/config/toolsConfig";
-import { ACValidator } from "./ACValidator";
-import { DefectAnalyzer } from "./DefectAnalyzer";
-import { KarateScriptWriter } from "./KarateScriptWriter";
-import { SmartSpecScriptWriter } from "./SmartSpecScriptWriter";
 
 interface ToolContentProps {
   selectedTool: Tool;
@@ -21,151 +19,100 @@ interface ToolContentProps {
   onJiraStoryFetched: (data: any) => void;
   onUrlProcessed: (data: any) => void;
   onFilesProcessed: (files: File[]) => void;
+  onConfigOpen: () => void;
 }
 
-export function ToolContent({
-  selectedTool,
-  importedFiles,
-  jiraStoryData,
-  urlData,
-  onJiraStoryFetched,
-  onUrlProcessed,
-  onFilesProcessed
+export function ToolContent({ 
+  selectedTool, 
+  importedFiles, 
+  jiraStoryData, 
+  urlData, 
+  onJiraStoryFetched, 
+  onUrlProcessed, 
+  onFilesProcessed,
+  onConfigOpen 
 }: ToolContentProps) {
-  // Special case for chatbot
-  if (selectedTool.isChatbot) {
-    return <QAChatbot />;
-  }
-
-  // Special case for xpath generator
-  if (selectedTool.id === "xpath-generator") {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {selectedTool.useJiraIntegration && (
-            <JiraIntegration onStoryFetched={onJiraStoryFetched} />
-          )}
-          {selectedTool.useUrlIntegration && (
-            <UrlIntegration onUrlProcessed={onUrlProcessed} />
-          )}
-        </div>
+  switch (selectedTool.id) {
+    case "test-generator":
+      return (
+        <TestGenerator
+          jiraData={jiraStoryData}
+          onJiraStoryFetched={onJiraStoryFetched}
+          onFilesProcessed={onFilesProcessed}
+          onConfigOpen={onConfigOpen}
+        />
+      );
+    case "ac-validator":
+      return (
+        <ACValidator
+          jiraData={jiraStoryData}
+          onConfigOpen={onConfigOpen}
+        />
+      );
+    case "xpath-generator":
+      return (
         <XPathGenerator 
+          jiraData={jiraStoryData} 
+          urlData={urlData}
+          onConfigOpen={onConfigOpen}
+        />
+      );
+    case "json-analyzer":
+      return (
+        <JSONAnalyzer
+          jiraData={jiraStoryData}
+        />
+      );
+    case "ada-analyzer":
+      return (
+        <AdaAnalyzer
           jiraData={jiraStoryData}
           urlData={urlData}
+          onConfigOpen={onConfigOpen}
         />
-      </div>
-    );
-  }
-
-  // Special case for json analyzer (removed URL integration)
-  if (selectedTool.id === "json-analyzer") {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {selectedTool.useJiraIntegration && (
-            <JiraIntegration onStoryFetched={onJiraStoryFetched} />
-          )}
-        </div>
-        <JSONAnalyzer 
-          jiraData={jiraStoryData}
-        />
-      </div>
-    );
-  }
-
-  // Special case for test generator - no separate JIRA integration needed
-  if (selectedTool.id === "test-generator") {
-    return (
-      <TestGenerator 
-        jiraData={jiraStoryData}
-        onConfigOpen={() => {}}
-      />
-    );
-  }
-
-  // Special case for AC validator
-  if (selectedTool.id === "ac-validator") {
-    return (
-      <ACValidator 
-        jiraData={jiraStoryData}
-        onConfigOpen={() => {}}
-      />
-    );
-  }
-
-  // Special case for defect analyzer
-  if (selectedTool.id === "defect-analyzer") {
-    return (
-      <DefectAnalyzer 
-        jiraData={jiraStoryData}
-        onConfigOpen={() => {}}
-      />
-    );
-  }
-
-  // Special case for karate script writer
-  if (selectedTool.id === "karate-script-writer") {
-    return (
-      <KarateScriptWriter 
-        jiraData={jiraStoryData}
-        onConfigOpen={() => {}}
-      />
-    );
-  }
-
-  // Special case for smartspec script writer
-  if (selectedTool.id === "smartspec-script-writer") {
-    return (
-      <SmartSpecScriptWriter 
-        jiraData={jiraStoryData}
-        onConfigOpen={() => {}}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center space-x-2">
-            <div className={`w-6 h-6 ${selectedTool.color} rounded flex items-center justify-center`}>
-              <selectedTool.icon className="w-4 h-4 text-white" />
-            </div>
-            <span>{selectedTool.name}</span>
-            {jiraStoryData && selectedTool.useJiraIntegration && (
-              <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
-            )}
-            {urlData && selectedTool.useUrlIntegration && (
-              <Badge variant="secondary">URL: {urlData.title}</Badge>
-            )}
-            {importedFiles.length > 0 && (
-              <Badge variant="outline">{importedFiles.length} files</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">{selectedTool.description}</p>
-          <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded">
-            <p>This tool uses automatic processing. Import your files and {selectedTool.useJiraIntegration ? 'fetch Jira data' : 'process URLs'} - no manual prompt needed!</p>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {selectedTool.useJiraIntegration && (
-          <JiraIntegration onStoryFetched={onJiraStoryFetched} />
-        )}
-        {selectedTool.useUrlIntegration && (
-          <UrlIntegration onUrlProcessed={onUrlProcessed} />
-        )}
-        <BulkFileImport 
-          onFilesProcessed={onFilesProcessed} 
-          toolId={selectedTool.id}
-          toolName={selectedTool.name}
+      );
+    case "lighthouse":
+      return (
+        <Lighthouse
           jiraData={jiraStoryData}
           urlData={urlData}
+          onConfigOpen={onConfigOpen}
         />
-      </div>
-    </div>
-  );
+      );
+    case "chatbot":
+      return (
+        <Chatbot
+          importedFiles={importedFiles}
+          jiraData={jiraStoryData}
+          urlData={urlData}
+          onJiraStoryFetched={onJiraStoryFetched}
+          onUrlProcessed={onUrlProcessed}
+          onFilesProcessed={onFilesProcessed}
+          onConfigOpen={onConfigOpen}
+        />
+      );
+    case "defect-analyzer":
+      return (
+        <DefectAnalyzer
+          jiraData={jiraStoryData}
+          onConfigOpen={onConfigOpen}
+        />
+      );
+    case "karate-script-writer":
+      return (
+        <KarateScriptWriter
+          jiraData={jiraStoryData}
+          onConfigOpen={onConfigOpen}
+        />
+      );
+    case "smartspec-script-writer":
+      return (
+        <SmartSpecScriptWriter
+          jiraData={jiraStoryData}
+          onConfigOpen={onConfigOpen}
+        />
+      );
+    default:
+      return <div>Tool Content Not Available</div>;
+  }
 }

@@ -2,47 +2,90 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Bug, Zap, TrendingUp, FileText, Download, Send, AlertTriangle, CheckCircle, Target } from "lucide-react";
-import { InfoPopover } from "@/components/ui/info-popover";
+import { 
+  Bug, 
+  Zap, 
+  Download, 
+  FileText, 
+  AlertTriangle, 
+  CheckCircle, 
+  TrendingUp, 
+  Shield,
+  Brain,
+  Target,
+  BarChart3,
+  Activity,
+  Loader2
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { InfoPopover } from "@/components/ui/info-popover";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
-import { DefectAnalyzer as DefectUtil, defectPreventionBestPractices, RootCauseAnalysis } from "@/utils/defectAnalysisUtils";
+import { AIInsightsEngine } from "./AIInsightsEngine";
+import { ProfessionalReportGenerator } from "./ProfessionalReportGenerator";
 
 interface DefectAnalyzerProps {
   jiraData?: any;
   onConfigOpen: () => void;
 }
 
+interface DefectAnalysisResult {
+  id: string;
+  category: string;
+  severity: string;
+  priority: string;
+  rootCause: string;
+  confidence: number;
+  testingGap: string;
+  preventionStrategy: string;
+  riskLevel: string;
+  recommendations: string[];
+  contributingFactors: string[];
+  aiEnhanced?: boolean;
+  backendInsights?: any;
+}
+
 export function DefectAnalyzer({ jiraData, onConfigOpen }: DefectAnalyzerProps) {
-  const [jiraTicketId, setJiraTicketId] = useState("");
   const [defectDescription, setDefectDescription] = useState("");
-  const [analysisResult, setAnalysisResult] = useState("");
-  const [rootCauseAnalysis, setRootCauseAnalysis] = useState<RootCauseAnalysis | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUpdatingJira, setIsUpdatingJira] = useState(false);
+  const [stepsToReproduce, setStepsToReproduce] = useState("");
+  const [expectedBehavior, setExpectedBehavior] = useState("");
+  const [actualBehavior, setActualBehavior] = useState("");
+  const [environment, setEnvironment] = useState("");
+  const [analysisResult, setAnalysisResult] = useState<DefectAnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [professionalMode, setProfessionalMode] = useState(true);
+  const [showDashboard, setShowDashboard] = useState(true);
   const { toast } = useToast();
 
-  const defectUtil = new DefectUtil();
-
-  const handleAnalyze = async () => {
-    if (!jiraTicketId.trim() && !defectDescription.trim()) {
+  const handleAnalyzeDefect = async () => {
+    if (!defectDescription.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a JIRA ticket ID or defect description.",
+        description: "Please enter a defect description to analyze.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
+    setIsAnalyzing(true);
+    setAnalysisResult(null); // Clear previous results
+    
     try {
+      const defectData = {
+        description: defectDescription,
+        stepsToReproduce,
+        expectedBehavior,
+        actualBehavior,
+        environment,
+        jiraData
+      };
+
       const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
       let config = defaultEndpointConfig;
       
@@ -51,112 +94,75 @@ export function DefectAnalyzer({ jiraData, onConfigOpen }: DefectAnalyzerProps) 
         config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
-      let enhancedJiraData = null;
+      const endpointUrl = getToolEndpointUrl("defect-analyzer", config);
+      const prompt = buildPromptWithContext("defect-analyzer", defectDescription, jiraData);
       
-      // If we have a JIRA ticket ID, fetch the ticket details first
-      if (jiraTicketId.trim()) {
-        const jiraEndpointUrl = getToolEndpointUrl("jira-integration", config);
-        
-        console.log(`Fetching JIRA ticket details for: ${jiraTicketId}`);
-        
-        try {
-          const jiraResponse = await fetch(jiraEndpointUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              action: "fetchStory",
-              jiraId: jiraTicketId,
-              toolId: "defect-analyzer"
-            })
-          });
-          
-          if (jiraResponse.ok) {
-            const jiraResult = await jiraResponse.json();
-            
-            enhancedJiraData = {
-              id: jiraTicketId,
-              title: jiraResult.title || jiraResult.summary || `Ticket ${jiraTicketId}`,
-              description: jiraResult.description || '',
-              priority: jiraResult.priority || 'Medium',
-              defectDetails: jiraResult.defectDetails || []
-            };
-          }
-        } catch (error) {
-          console.log('JIRA fetch failed, proceeding with local analysis');
-        }
-      }
-
-      // Perform local root cause analysis first
-      const contentToAnalyze = defectDescription || 
-        (enhancedJiraData ? `${enhancedJiraData.title}\n\n${enhancedJiraData.description}` : '');
+      console.log(`🚀 Professional defect analysis via ${endpointUrl}`);
       
-      const localAnalysis = defectUtil.analyzeDefect(contentToAnalyze, enhancedJiraData);
-      setRootCauseAnalysis(localAnalysis);
-
-      // Generate comprehensive report
-      const report = defectUtil.generateDefectReport(localAnalysis, contentToAnalyze, jiraTicketId);
-      setAnalysisResult(report);
-
-      // Try to enhance with backend analysis
-      try {
-        const endpointUrl = getToolEndpointUrl("defect-analyzer", config);
-        const prompt = buildPromptWithContext("defect-analyzer", contentToAnalyze, enhancedJiraData);
-        
-        console.log(`Enhancing defect analysis via ${endpointUrl}`);
-        
-        const response = await fetch(endpointUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt: prompt,
-            defectDescription: contentToAnalyze,
-            toolId: "defect-analyzer",
-            jiraId: jiraTicketId || '',
-            jiraData: enhancedJiraData,
-            localAnalysis: localAnalysis
-          })
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          const backendAnalysis = result.response || result.analysis || result.data?.response || result.data?.analysis;
-          
-          if (backendAnalysis) {
-            // Enhance the report with backend insights
-            const enhancedReport = report + '\n\n## AI-Enhanced Insights\n' + backendAnalysis;
-            setAnalysisResult(enhancedReport);
-          }
-        }
-      } catch (error) {
-        console.log('Backend enhancement failed, using local analysis only');
-      }
-      
-      toast({
-        title: "Defect Analysis Complete",
-        description: jiraTicketId ? `Defect analyzed for JIRA ticket ${jiraTicketId}` : "Defect analysis completed successfully",
+      const response = await fetch(endpointUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          defectData: defectData,
+          toolId: "defect-analyzer",
+          professionalMode: professionalMode,
+          aiEnhanced: true
+        })
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const backendResult = await response.json();
+      
+      if (backendResult && backendResult.defectAnalysis) {
+        const result: DefectAnalysisResult = {
+          id: backendResult.defectAnalysis.id || `DEF-${Date.now()}`,
+          category: backendResult.defectAnalysis.category || 'Unknown',
+          severity: backendResult.defectAnalysis.severity || 'Medium',
+          priority: backendResult.defectAnalysis.priority || 'Medium',
+          rootCause: backendResult.rootCauseAnalysis?.primaryCause || 'Analysis incomplete',
+          confidence: backendResult.defectAnalysis.confidence || 75,
+          testingGap: backendResult.qualityMetrics?.testingGap || 'No specific gaps identified',
+          preventionStrategy: backendResult.preventionStrategy?.processImprovements?.[0] || 'Standard prevention measures',
+          riskLevel: backendResult.defectAnalysis.riskLevel || 'Medium',
+          recommendations: backendResult.recommendations?.map((rec: any) => rec.action) || [],
+          contributingFactors: backendResult.rootCauseAnalysis?.contributingFactors?.map((factor: any) => factor.factor) || [],
+          aiEnhanced: true,
+          backendInsights: backendResult
+        };
+        
+        setAnalysisResult(result);
+        
+        toast({
+          title: "🚀 Professional Analysis Complete",
+          description: `Defect analyzed with ${result.confidence}% confidence using AI-powered root cause analysis`,
+        });
+      } else {
+        throw new Error('Invalid response format from analysis service');
+      }
+
     } catch (error) {
       console.error('Error analyzing defect:', error);
       toast({
-        title: "Error",
-        description: "Could not analyze defect. Check your backend configuration and connection.",
+        title: "Analysis Failed",
+        description: "Could not connect to analysis service. Please check your configuration and try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsAnalyzing(false);
     }
   };
 
-  const exportAnalysis = (format: 'txt' | 'json' | 'pdf') => {
+  const exportAnalysis = (format: 'txt' | 'json' | 'csv') => {
     if (!analysisResult) {
       toast({
         title: "Error",
-        description: "Please analyze defect first.",
+        description: "Please analyze a defect first.",
         variant: "destructive",
       });
       return;
@@ -169,20 +175,78 @@ export function DefectAnalyzer({ jiraData, onConfigOpen }: DefectAnalyzerProps) 
     if (format === 'json') {
       const exportData = {
         timestamp: new Date().toISOString(),
-        jiraTicketId: jiraTicketId,
-        defectDescription: defectDescription,
-        analysisResult: analysisResult,
-        rootCauseAnalysis: rootCauseAnalysis,
-        bestPractices: defectPreventionBestPractices,
-        jiraData: jiraData
+        defectData: {
+          description: defectDescription,
+          stepsToReproduce,
+          expectedBehavior,
+          actualBehavior,
+          environment
+        },
+        analysis: analysisResult,
+        jiraData: jiraData,
+        professionalMode: professionalMode,
+        aiEnhanced: analysisResult.aiEnhanced || false
       };
       content = JSON.stringify(exportData, null, 2);
       mimeType = 'application/json';
-      filename = `defect-analysis-${Date.now()}.json`;
+      filename = `professional-defect-analysis-${Date.now()}.json`;
+    } else if (format === 'csv') {
+      const headers = 'Field,Value\n';
+      const rows = [
+        `"Defect ID","${analysisResult.id}"`,
+        `"Category","${analysisResult.category}"`,
+        `"Severity","${analysisResult.severity}"`,
+        `"Priority","${analysisResult.priority}"`,
+        `"Root Cause","${analysisResult.rootCause}"`,
+        `"Confidence","${analysisResult.confidence}%"`,
+        `"Testing Gap","${analysisResult.testingGap}"`,
+        `"Prevention Strategy","${analysisResult.preventionStrategy}"`,
+        `"Risk Level","${analysisResult.riskLevel}"`,
+        `"Recommendations","${analysisResult.recommendations.join('; ')}"`,
+        `"Contributing Factors","${analysisResult.contributingFactors.join('; ')}"`,
+        `"AI Enhanced","${analysisResult.aiEnhanced ? 'Yes' : 'No'}"`
+      ].join('\n');
+      content = headers + rows;
+      mimeType = 'text/csv';
+      filename = `professional-defect-analysis-${Date.now()}.csv`;
     } else {
-      content = analysisResult;
+      content = `🚀 Professional Defect Analysis Report\n`;
+      content += `Generated: ${new Date().toLocaleString()}\n`;
+      content += `${'='.repeat(60)}\n\n`;
+      
+      content += `📋 DEFECT INFORMATION\n`;
+      content += `Description: ${defectDescription}\n`;
+      content += `Steps to Reproduce: ${stepsToReproduce}\n`;
+      content += `Expected Behavior: ${expectedBehavior}\n`;
+      content += `Actual Behavior: ${actualBehavior}\n`;
+      content += `Environment: ${environment}\n\n`;
+      
+      content += `🔍 PROFESSIONAL ANALYSIS\n`;
+      content += `Defect ID: ${analysisResult.id}\n`;
+      content += `Category: ${analysisResult.category}\n`;
+      content += `Severity: ${analysisResult.severity}\n`;
+      content += `Priority: ${analysisResult.priority}\n`;
+      content += `Root Cause: ${analysisResult.rootCause}\n`;
+      content += `Confidence Level: ${analysisResult.confidence}%\n`;
+      content += `Risk Level: ${analysisResult.riskLevel}\n`;
+      content += `Testing Gap: ${analysisResult.testingGap}\n`;
+      content += `AI Enhanced: ${analysisResult.aiEnhanced ? 'Yes' : 'No'}\n\n`;
+      
+      content += `🎯 RECOMMENDATIONS\n`;
+      analysisResult.recommendations.forEach((rec, index) => {
+        content += `${index + 1}. ${rec}\n`;
+      });
+      
+      content += `\n⚠️ CONTRIBUTING FACTORS\n`;
+      analysisResult.contributingFactors.forEach((factor, index) => {
+        content += `${index + 1}. ${factor}\n`;
+      });
+      
+      content += `\n🛡️ PREVENTION STRATEGY\n`;
+      content += `${analysisResult.preventionStrategy}\n`;
+      
       mimeType = 'text/plain';
-      filename = `defect-analysis-${Date.now()}.txt`;
+      filename = `professional-defect-analysis-${Date.now()}.txt`;
     }
 
     const blob = new Blob([content], { type: mimeType });
@@ -196,382 +260,371 @@ export function DefectAnalyzer({ jiraData, onConfigOpen }: DefectAnalyzerProps) 
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Complete",
-      description: `Defect analysis exported as ${format.toUpperCase()} file`,
+      title: "🎉 Export Complete",
+      description: `Professional defect analysis exported as ${format.toUpperCase()} file`,
     });
-  };
-
-  const updateJira = async () => {
-    if (!analysisResult) {
-      toast({
-        title: "Error",
-        description: "Please analyze defect first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUpdatingJira(true);
-    try {
-      const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
-      let config = defaultEndpointConfig;
-      
-      if (savedConfig) {
-        const parsedConfig = JSON.parse(savedConfig);
-        config = { ...defaultEndpointConfig, ...parsedConfig };
-      }
-
-      const endpointUrl = getToolEndpointUrl("jira-integration", config);
-      
-      const response = await fetch(endpointUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: "updateTicket",
-          analysis: analysisResult,
-          jiraId: jiraData?.id || jiraData?.key || jiraTicketId,
-          toolId: "defect-analyzer"
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      toast({
-        title: "Jira Updated",
-        description: `Defect analysis updated in Jira: ${result.issueKey || 'Success'}`,
-      });
-      
-    } catch (error) {
-      console.error('Error updating Jira:', error);
-      toast({
-        title: "Error",
-        description: "Could not update Jira. Check configuration.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdatingJira(false);
-    }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
-      case 'critical': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
+      case 'critical': return 'bg-red-100 text-red-700 border-red-300';
+      case 'high': return 'bg-orange-100 text-orange-700 border-orange-300';
+      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+      case 'low': return 'bg-green-100 text-green-700 border-green-300';
+      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'urgent': return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      case 'high': return <TrendingUp className="w-4 h-4 text-orange-500" />;
+      case 'medium': return <Activity className="w-4 h-4 text-yellow-500" />;
+      case 'low': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      default: return <Activity className="w-4 h-4 text-gray-500" />;
     }
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
+    <div className="space-y-6">
+      {/* Professional Header */}
+      <Card className="border-2 border-gradient bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                <Bug className="w-4 h-4 text-white" />
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
+                <Bug className="w-5 h-5 text-white" />
               </div>
-              <span>🚀 Advanced Defect Analyzer</span>
-              {jiraData && (
-                <Badge variant="secondary">Jira: {jiraData.id}</Badge>
-              )}
+              <div>
+                <span className="text-xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                  🚀 Professional Defect Analyzer
+                </span>
+                <div className="text-sm text-gray-600 flex items-center space-x-2">
+                  <Badge variant="outline" className="bg-red-100 text-red-700">AI Root Cause Analysis</Badge>
+                  <Badge variant="outline" className="bg-orange-100 text-orange-700">Professional Grade</Badge>
+                  {jiraData && <Badge variant="secondary">Jira: {jiraData.id}</Badge>}
+                </div>
+              </div>
             </div>
-            <InfoPopover
-              title="Advanced Defect Analyzer"
-              content="Comprehensive defect analysis with root cause identification and prevention strategies."
-              steps={[
-                "Enter a JIRA defect ticket ID or describe the defect manually",
-                "Click 'Analyze Defect' to start comprehensive analysis",
-                "Review root cause analysis and recommendations",
-                "Export detailed report or update JIRA with findings"
-              ]}
-            />
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setProfessionalMode(!professionalMode)}
+                className={professionalMode ? "bg-green-50 text-green-700" : ""}
+              >
+                <Brain className="w-4 h-4 mr-1" />
+                {professionalMode ? "AI Mode ON" : "AI Mode OFF"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDashboard(!showDashboard)}
+              >
+                <BarChart3 className="w-4 h-4 mr-1" />
+                Dashboard
+              </Button>
+              <InfoPopover
+                title="Professional Defect Analyzer"
+                content="AI-powered root cause analysis with professional insights, risk assessment, and comprehensive prevention strategies."
+                steps={[
+                  "Enter detailed defect information",
+                  "Enable AI Mode for enhanced analysis",
+                  "Review professional root cause analysis",
+                  "Examine AI insights and recommendations",
+                  "Export comprehensive analysis reports"
+                ]}
+              />
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            🔧 Comprehensive defect analysis with root cause identification, impact assessment, and prevention strategies.
+            🔍 Professional-grade defect analysis with AI-powered root cause identification, risk assessment, and prevention strategies for enterprise quality assurance.
           </p>
-
-          <div className="space-y-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="space-y-2">
-              <Label htmlFor="jira-ticket-id">JIRA Defect Ticket ID</Label>
-              <Input
-                id="jira-ticket-id"
-                placeholder="Enter JIRA Ticket ID (e.g., BUG-123)"
-                value={jiraTicketId}
-                onChange={(e) => setJiraTicketId(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="defect-description">Defect Description (Optional)</Label>
+              <Label htmlFor="defect-description">Defect Description *</Label>
               <Textarea
                 id="defect-description"
-                placeholder="Describe the defect, steps to reproduce, expected vs actual behavior..."
+                placeholder="Describe the defect in detail..."
                 value={defectDescription}
                 onChange={(e) => setDefectDescription(e.target.value)}
-                rows={6}
+                className="min-h-[100px]"
               />
             </div>
-            
+            <div className="space-y-2">
+              <Label htmlFor="steps-to-reproduce">Steps to Reproduce</Label>
+              <Textarea
+                id="steps-to-reproduce"
+                placeholder="1. Navigate to...\n2. Click on...\n3. Observe..."
+                value={stepsToReproduce}
+                onChange={(e) => setStepsToReproduce(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="expected-behavior">Expected Behavior</Label>
+              <Textarea
+                id="expected-behavior"
+                placeholder="What should happen..."
+                value={expectedBehavior}
+                onChange={(e) => setExpectedBehavior(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="actual-behavior">Actual Behavior</Label>
+              <Textarea
+                id="actual-behavior"
+                placeholder="What actually happened..."
+                value={actualBehavior}
+                onChange={(e) => setActualBehavior(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="environment">Environment</Label>
+              <Input
+                id="environment"
+                placeholder="Browser, OS, Version, etc."
+                value={environment}
+                onChange={(e) => setEnvironment(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
             <Button 
-              onClick={handleAnalyze}
-              disabled={(!jiraTicketId.trim() && !defectDescription.trim()) || isLoading}
-              className="w-full"
+              onClick={handleAnalyzeDefect}
+              disabled={!defectDescription.trim() || isAnalyzing}
+              className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
             >
-              {isLoading ? (
-                <Zap className="w-4 h-4 mr-2 animate-spin" />
+              {isAnalyzing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
-                <Bug className="w-4 h-4 mr-2" />
+                <Zap className="w-4 h-4 mr-2" />
               )}
-              {isLoading ? "Analyzing..." : "🎯 Analyze Defect"}
+              {isAnalyzing ? "🧠 AI Analyzing..." : "🎯 Analyze Defect"}
             </Button>
+            
+            {analysisResult && (
+              <div className="flex gap-2">
+                <Button onClick={() => exportAnalysis('txt')} variant="outline">
+                  <Download className="w-4 h-4 mr-2" />
+                  TXT
+                </Button>
+                <Button onClick={() => exportAnalysis('json')} variant="outline">
+                  <FileText className="w-4 h-4 mr-2" />
+                  JSON
+                </Button>
+                <Button onClick={() => exportAnalysis('csv')} variant="outline">
+                  <FileText className="w-4 h-4 mr-2" />
+                  CSV
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {rootCauseAnalysis && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Target className="w-5 h-5" />
-              <span>📊 Root Cause Analysis Dashboard</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="analysis">Analysis</TabsTrigger>
-                <TabsTrigger value="prevention">Prevention</TabsTrigger>
-                <TabsTrigger value="best-practices">Best Practices</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="border-l-4 border-l-red-500">
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getSeverityColor(rootCauseAnalysis.severity)}>
-                          {rootCauseAnalysis.severity}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">🎯 Severity Level</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="border-l-4 border-l-blue-500">
-                    <CardContent className="p-4">
-                      <div className="text-lg font-semibold">{rootCauseAnalysis.category}</div>
-                      <p className="text-sm text-gray-600">📋 Defect Category</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="border-l-4 border-l-yellow-500">
-                    <CardContent className="p-4">
-                      <div className="text-lg font-semibold">{rootCauseAnalysis.impactAreas.length}</div>
-                      <p className="text-sm text-gray-600">⚡ Impact Areas</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="border-l-4 border-l-green-500">
-                    <CardContent className="p-4">
-                      <div className="text-lg font-semibold">{rootCauseAnalysis.recommendedActions.length}</div>
-                      <p className="text-sm text-gray-600">✅ Recommended Actions</p>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">🔍 Primary Root Cause</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-start space-x-2">
-                      <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
-                      <p className="text-gray-700">{rootCauseAnalysis.primaryCause}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="analysis" className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">⚡ Contributing Factors</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {rootCauseAnalysis.contributingFactors.map((factor, index) => (
-                          <div key={index} className="flex items-start space-x-2">
-                            <span className="flex-shrink-0 w-5 h-5 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-semibold mt-0.5">
-                              {index + 1}
-                            </span>
-                            <p className="text-sm text-gray-700">{factor}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">🎯 Impact Areas</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {rootCauseAnalysis.impactAreas.map((area, index) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <CheckCircle className="w-4 h-4 text-blue-500" />
-                            <span className="text-sm text-gray-700">{area}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">🔧 Testing Gaps Identified</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {rootCauseAnalysis.testingGaps.map((gap, index) => (
-                        <div key={index} className="flex items-start space-x-2 p-2 bg-red-50 rounded">
-                          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5" />
-                          <p className="text-sm text-red-700">{gap}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="prevention" className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">🛡️ Prevention Measures</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {rootCauseAnalysis.preventionMeasures.map((measure, index) => (
-                          <div key={index} className="flex items-start space-x-2 p-2 bg-green-50 rounded">
-                            <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                            <p className="text-sm text-green-700">{measure}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">✅ Recommended Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {rootCauseAnalysis.recommendedActions.map((action, index) => (
-                          <div key={index} className="flex items-start space-x-2">
-                            <span className="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold mt-0.5">
-                              {index + 1}
-                            </span>
-                            <p className="text-sm text-gray-700">{action}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="best-practices" className="space-y-4">
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg">📚 Defect Prevention Best Practices</h3>
-                  {defectPreventionBestPractices.map((practice, index) => (
-                    <div key={index} className="flex items-start space-x-2 p-3 bg-gray-50 rounded">
-                      <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold">
-                        {index + 1}
-                      </span>
-                      <p className="text-sm text-gray-700">{practice}</p>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-            
-            {analysisResult && (
-              <div className="mt-6 flex gap-2">
-                <Button onClick={() => exportAnalysis('txt')} variant="outline" className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export TXT
-                </Button>
-                <Button onClick={() => exportAnalysis('json')} variant="outline" className="flex-1">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Export JSON
-                </Button>
-                <Button 
-                  onClick={updateJira}
-                  disabled={isUpdatingJira}
-                  variant="outline" 
-                  className="flex-1"
-                >
-                  {isUpdatingJira ? (
-                    <Send className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                  )}
-                  {isUpdatingJira ? "Updating..." : "Update Jira"}
-                </Button>
+      {/* Show loading state while analyzing */}
+      {isAnalyzing && (
+        <Card className="border-2 border-blue-200">
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-blue-800">🧠 AI Analysis in Progress</h3>
+                <p className="text-sm text-blue-600 mt-1">
+                  Performing comprehensive root cause analysis using advanced AI models...
+                </p>
               </div>
-            )}
+              <div className="w-full max-w-md">
+                <Progress value={33} className="h-2" />
+                <p className="text-xs text-blue-500 mt-1 text-center">
+                  Analyzing defect patterns and determining root causes
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {analysisResult && !rootCauseAnalysis && (
-        <Card>
+      {/* AI Insights Section - Only shown when we have results */}
+      {analysisResult && showDashboard && (
+        <AIInsightsEngine
+          toolId="defect-analyzer"
+          analysisData={analysisResult}
+          onInsightAction={(insight) => {
+            toast({
+              title: "AI Insight",
+              description: insight.description,
+            });
+          }}
+        />
+      )}
+
+      {/* Professional Analysis Results - Only shown when we have actual results */}
+      {analysisResult && (
+        <Card className="border-2 border-orange-200">
           <CardHeader>
-            <CardTitle className="text-lg">📊 Analysis Results</CardTitle>
+            <CardTitle className="text-lg flex items-center space-x-2">
+              <Target className="w-5 h-5 text-orange-600" />
+              <span>🔍 Professional Analysis Results</span>
+              <Badge variant="outline" className="bg-orange-100 text-orange-700">
+                {analysisResult.confidence}% Confidence
+              </Badge>
+              {analysisResult.aiEnhanced && (
+                <Badge className="bg-purple-100 text-purple-700">
+                  <Brain className="w-3 h-3 mr-1" />
+                  AI Enhanced
+                </Badge>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-muted p-4 rounded-lg">
-              <pre className="text-sm whitespace-pre-wrap">{analysisResult}</pre>
-            </div>
-            
-            <div className="flex gap-2 mt-4">
-              <Button onClick={() => exportAnalysis('txt')} variant="outline" className="flex-1">
-                <Download className="w-4 h-4 mr-2" />
-                Export TXT
-              </Button>
-              <Button onClick={() => exportAnalysis('json')} variant="outline" className="flex-1">
-                <FileText className="w-4 h-4 mr-2" />
-                Export JSON
-              </Button>
-              <Button 
-                onClick={updateJira}
-                disabled={isUpdatingJira}
-                variant="outline" 
-                className="flex-1"
-              >
-                {isUpdatingJira ? (
-                  <Send className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                )}
-                {isUpdatingJira ? "Updating..." : "Update Jira"}
-              </Button>
-            </div>
+            <Tabs defaultValue="analysis" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="analysis">Root Cause Analysis</TabsTrigger>
+                <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+                <TabsTrigger value="reports">Professional Reports</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="analysis" className="space-y-6">
+                {/* Key Metrics Dashboard */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-white rounded-lg border-2 border-red-200">
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(analysisResult.severity)}`}>
+                      {analysisResult.severity}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">Severity</div>
+                  </div>
+                  <div className="text-center p-4 bg-white rounded-lg border-2 border-orange-200">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPriorityIcon(analysisResult.priority)}
+                      <span className="font-medium">{analysisResult.priority}</span>
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">Priority</div>
+                  </div>
+                  <div className="text-center p-4 bg-white rounded-lg border-2 border-blue-200">
+                    <div className="text-2xl font-bold text-blue-600">{analysisResult.confidence}%</div>
+                    <div className="text-xs text-gray-600">AI Confidence</div>
+                    <Progress value={analysisResult.confidence} className="mt-1 h-1" />
+                  </div>
+                  <div className="text-center p-4 bg-white rounded-lg border-2 border-purple-200">
+                    <div className="text-lg font-bold text-purple-600">{analysisResult.riskLevel}</div>
+                    <div className="text-xs text-gray-600">Risk Level</div>
+                  </div>
+                </div>
+
+                {/* Detailed Analysis */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center space-x-2">
+                        <Target className="w-4 h-4 text-blue-600" />
+                        <span>🎯 Root Cause Analysis</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-medium text-sm text-gray-700">Category</h4>
+                          <Badge variant="outline" className="mt-1">{analysisResult.category}</Badge>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm text-gray-700">Root Cause</h4>
+                          <p className="text-sm text-gray-600 mt-1">{analysisResult.rootCause}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm text-gray-700">Testing Gap</h4>
+                          <p className="text-sm text-gray-600 mt-1">{analysisResult.testingGap}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-l-4 border-l-red-500">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center space-x-2">
+                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                        <span>⚠️ Contributing Factors</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {analysisResult.contributingFactors.length > 0 ? (
+                          analysisResult.contributingFactors.map((factor, index) => (
+                            <div key={index} className="flex items-start space-x-2">
+                              <span className="flex-shrink-0 w-5 h-5 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-medium">
+                                {index + 1}
+                              </span>
+                              <p className="text-sm text-gray-600">{factor}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">No contributing factors identified</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Prevention Strategy */}
+                <Card className="border-l-4 border-l-green-500">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center space-x-2">
+                      <Shield className="w-4 h-4 text-green-600" />
+                      <span>🛡️ Prevention Strategy</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700 leading-relaxed">{analysisResult.preventionStrategy}</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="recommendations" className="space-y-4">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span>💡 Professional Recommendations</span>
+                  </h3>
+                  {analysisResult.recommendations.length > 0 ? (
+                    analysisResult.recommendations.map((recommendation, index) => (
+                      <div key={index} className="flex items-start space-x-3 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
+                        <span className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-700 leading-relaxed">{recommendation}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-lg border">
+                      <p className="text-sm text-gray-500 italic">No specific recommendations available</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="reports">
+                <ProfessionalReportGenerator
+                  toolId="defect-analyzer"
+                  analysisData={analysisResult}
+                  metrics={{
+                    testCoverage: 82,
+                    defectDensity: analysisResult.severity === 'Critical' ? 1.2 : 0.8,
+                    automationRate: 75,
+                    riskScore: analysisResult.riskLevel === 'High' ? 35 : 20,
+                    qualityIndex: analysisResult.confidence
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       )}

@@ -23,6 +23,11 @@ export function QATools({ selectedTool: externalSelectedTool, onToolSelect: exte
     onToolSelect(tool);
   };
 
+  const handleConfigOpen = () => {
+    // This would typically open a configuration modal
+    console.log('Opening configuration...');
+  };
+
   return (
     <div className="space-y-6">
       {/* Show toolbar only if no external tool selection is provided */}
@@ -40,6 +45,7 @@ export function QATools({ selectedTool: externalSelectedTool, onToolSelect: exte
           onJiraStoryFetched={setJiraStoryData}
           onUrlProcessed={setUrlData}
           onFilesProcessed={setImportedFiles}
+          onConfigOpen={handleConfigOpen}
         />
       )}
     </div>
