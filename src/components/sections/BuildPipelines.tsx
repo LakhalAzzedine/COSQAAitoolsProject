@@ -74,20 +74,23 @@ export function BuildPipelines() {
   const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchBuildData = async () => {
     setIsLoading(true);
+    setConnectionError(null);
+    
     try {
       const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
       let config = defaultEndpointConfig;
       
       if (savedConfig) {
         const parsedConfig = JSON.parse(savedConfig);
-        config = { ...defaultendpointConfig, ...parsedConfig };
+        config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
-      console.log("Fetching enhanced pipeline data from:", `${config.baseUrl}/build-pipelines`);
+      console.log("Fetching pipeline data from:", `${config.baseUrl}/build-pipelines`);
 
       const response = await fetch(`${config.baseUrl}/build-pipelines`, {
         method: 'GET',
@@ -101,85 +104,41 @@ export function BuildPipelines() {
       }
 
       const data = await response.json();
-      setRecentBuilds(data.recentBuilds || generateMockBuilds());
-      setPipelineStats(data.stats || generateMockStats());
-      setAiInsights(data.aiInsights || generateMockAIInsights());
+      
+      // Only set data if it exists in the response
+      if (data.recentBuilds) {
+        setRecentBuilds(data.recentBuilds);
+      }
+      if (data.stats) {
+        setPipelineStats(data.stats);
+      }
+      if (data.aiInsights) {
+        setAiInsights(data.aiInsights);
+      }
 
       toast({
-        title: "🚀 Pipeline Data Updated",
-        description: "AI-enhanced pipeline analytics refreshed successfully",
+        title: "✅ Pipeline Data Loaded",
+        description: "Connected to external pipeline feed successfully",
       });
 
     } catch (error) {
       console.error('Error fetching build data:', error);
-      // Use mock data when external feed is unavailable
-      setRecentBuilds(generateMockBuilds());
-      setPipelineStats(generateMockStats());
-      setAiInsights(generateMockAIInsights());
+      setConnectionError("Unable to connect to external pipeline feed. Please check your endpoint configuration.");
+      
+      // Clear existing data when connection fails
+      setRecentBuilds([]);
+      setPipelineStats(null);
+      setAiInsights(null);
       
       toast({
-        title: "⚠️ Using Mock Data",
-        description: "External pipeline feed unavailable. Displaying simulated data.",
+        title: "❌ Connection Failed",
+        description: "Cannot connect to pipeline feed. Configure endpoint in settings.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  const generateMockBuilds = (): BuildData[] => [
-    {
-      id: "1",
-      app: "tsdm",
-      type: "QA",
-      status: "success",
-      time: "2 hours ago",
-      duration: "4m 32s",
-      branch: "feature/ai-enhancement",
-      commit: "a1b2c3d",
-      author: "John Doe",
-      tests: { passed: 245, failed: 3, coverage: 87 }
-    },
-    {
-      id: "2",
-      app: "navigator",
-      type: "PROD",
-      status: "running",
-      time: "5 minutes ago",
-      duration: "2m 15s",
-      branch: "main",
-      commit: "e4f5g6h",
-      author: "Jane Smith",
-      tests: { passed: 189, failed: 0, coverage: 92 }
-    }
-  ];
-
-  const generateMockStats = (): PipelineStats => ({
-    successfulBuilds: 847,
-    failedBuilds: 23,
-    avgBuildTime: "3m 45s",
-    successRate: "97.4%",
-    deploymentFrequency: "4.2/day",
-    leadTime: "2.1 hours",
-    mttr: "12 minutes",
-    changeFailureRate: "2.6%"
-  });
-
-  const generateMockAIInsights = (): AIInsights => ({
-    riskScore: 15,
-    recommendations: [
-      "Consider increasing test coverage for critical paths",
-      "Optimize build parallelization to reduce duration by 25%",
-      "Schedule maintenance for staging environment next week"
-    ],
-    predictedDuration: "3m 20s",
-    qualityScore: 94,
-    optimizationSuggestions: [
-      "Enable build caching to reduce dependency installation time",
-      "Implement progressive deployment strategy",
-      "Add automated rollback triggers for failed deployments"
-    ]
-  });
 
   useEffect(() => {
     fetchBuildData();
@@ -189,7 +148,7 @@ export function BuildPipelines() {
 
   const handleBuildTrigger = async (type: "qa" | "staging" | "prod") => {
     setIsBuilding(prev => ({ ...prev, [type]: true }));
-    console.log(`🚀 Triggering AI-enhanced ${type.toUpperCase()} build for ${selectedApp.toUpperCase()}`);
+    console.log(`🚀 Triggering ${type.toUpperCase()} build for ${selectedApp.toUpperCase()}`);
     
     try {
       const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
@@ -218,8 +177,8 @@ export function BuildPipelines() {
       }
 
       toast({
-        title: "🤖 AI-Enhanced Build Triggered",
-        description: `${type.toUpperCase()} deployment initiated for ${selectedApp.toUpperCase()} with intelligent optimizations`,
+        title: "🚀 Build Triggered",
+        description: `${type.toUpperCase()} deployment initiated for ${selectedApp.toUpperCase()}`,
       });
 
       setTimeout(() => {
@@ -230,7 +189,7 @@ export function BuildPipelines() {
       console.error('Error triggering build:', error);
       toast({
         title: "❌ Build Trigger Failed",
-        description: "Could not initiate build. Check SVC cluster connection.",
+        description: "Could not initiate build. Check endpoint configuration.",
         variant: "destructive",
       });
     } finally {
@@ -276,9 +235,9 @@ export function BuildPipelines() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            🤖 AI-Enhanced QA Pipelines
+            🚀 QA Build Pipelines
           </h1>
-          <p className="text-muted-foreground mt-1">Professional CI/CD with intelligent automation and predictive analytics</p>
+          <p className="text-muted-foreground mt-1">Professional CI/CD pipeline management with real-time analytics</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={fetchBuildData} disabled={isLoading} variant="outline">
@@ -292,6 +251,20 @@ export function BuildPipelines() {
         </div>
       </div>
 
+      {connectionError && (
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div>
+                <div className="font-medium text-red-800 dark:text-red-300">Connection Error</div>
+                <div className="text-sm text-red-700 dark:text-red-400">{connectionError}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -302,13 +275,12 @@ export function BuildPipelines() {
 
         <TabsContent value="overview" className="space-y-6">
           {/* DORA Metrics */}
-          {pipelineStats && (
+          {pipelineStats ? (
             <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <BarChart3 className="w-5 h-5 text-blue-600" />
                   <span>DORA Metrics Dashboard</span>
-                  <Badge variant="outline" className="ml-2">Industry Leading</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -316,29 +288,33 @@ export function BuildPipelines() {
                   <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border">
                     <div className="text-2xl font-bold text-green-600 mb-1">{pipelineStats.deploymentFrequency}</div>
                     <div className="text-sm text-muted-foreground">Deployment Frequency</div>
-                    <div className="text-xs text-green-600 mt-1">▲ Elite Performer</div>
                   </div>
                   <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border">
                     <div className="text-2xl font-bold text-blue-600 mb-1">{pipelineStats.leadTime}</div>
                     <div className="text-sm text-muted-foreground">Lead Time</div>
-                    <div className="text-xs text-blue-600 mt-1">▲ High Performer</div>
                   </div>
                   <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border">
                     <div className="text-2xl font-bold text-purple-600 mb-1">{pipelineStats.mttr}</div>
                     <div className="text-sm text-muted-foreground">MTTR</div>
-                    <div className="text-xs text-purple-600 mt-1">▲ Elite</div>
                   </div>
                   <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border">
                     <div className="text-2xl font-bold text-orange-600 mb-1">{pipelineStats.changeFailureRate}</div>
                     <div className="text-sm text-muted-foreground">Change Failure Rate</div>
-                    <div className="text-xs text-orange-600 mt-1">▼ Excellent</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+          ) : (
+            <Card className="border-2 border-gray-200">
+              <CardContent className="p-8 text-center">
+                <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <div className="text-lg font-medium text-gray-600 mb-2">No DORA Metrics Available</div>
+                <div className="text-sm text-gray-500">Connect to your pipeline feed to view metrics</div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Recent Builds with Enhanced Details */}
+          {/* Recent Builds */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -350,7 +326,7 @@ export function BuildPipelines() {
               {isLoading && (
                 <div className="flex items-center justify-center py-8">
                   <RefreshCw className="w-6 h-6 animate-spin mr-2" />
-                  <span>Loading enhanced pipeline data...</span>
+                  <span>Loading pipeline data...</span>
                 </div>
               )}
               
@@ -364,13 +340,17 @@ export function BuildPipelines() {
                           <div>
                             <div className="font-semibold flex items-center space-x-2">
                               <span>{build.app.toUpperCase()} - {build.type}</span>
-                              <GitBranch className="w-3 h-3" />
-                              <span className="text-sm text-muted-foreground">{build.branch}</span>
+                              {build.branch && (
+                                <>
+                                  <GitBranch className="w-3 h-3" />
+                                  <span className="text-sm text-muted-foreground">{build.branch}</span>
+                                </>
+                              )}
                             </div>
                             <div className="text-sm text-muted-foreground flex items-center space-x-4">
                               <span>{build.time} • {build.duration}</span>
-                              <span>by {build.author}</span>
-                              <span>#{build.commit}</span>
+                              {build.author && <span>by {build.author}</span>}
+                              {build.commit && <span>#{build.commit}</span>}
                             </div>
                           </div>
                         </div>
@@ -397,6 +377,14 @@ export function BuildPipelines() {
                   ))}
                 </div>
               )}
+
+              {!isLoading && recentBuilds.length === 0 && (
+                <div className="text-center py-8">
+                  <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <div className="text-lg font-medium text-gray-600 mb-2">No Recent Builds</div>
+                  <div className="text-sm text-gray-500">Connect to your pipeline feed to view build history</div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -407,7 +395,7 @@ export function BuildPipelines() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Rocket className="w-5 h-5 text-purple-600" />
-                  <span>AI-Powered Build Control</span>
+                  <span>Build Control</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -451,7 +439,7 @@ export function BuildPipelines() {
                     ) : (
                       <Play className="w-4 h-4 mr-2" />
                     )}
-                    <span>{isBuilding.qa ? "Building..." : "🤖 Smart QA Deploy"}</span>
+                    <span>{isBuilding.qa ? "Building..." : "Deploy to QA"}</span>
                   </Button>
 
                   <Button
@@ -465,7 +453,7 @@ export function BuildPipelines() {
                     ) : (
                       <Target className="w-4 h-4 mr-2" />
                     )}
-                    <span>{isBuilding.staging ? "Staging..." : "🎯 Staging Deploy"}</span>
+                    <span>{isBuilding.staging ? "Staging..." : "Deploy to Staging"}</span>
                   </Button>
 
                   <Button
@@ -479,20 +467,14 @@ export function BuildPipelines() {
                     ) : (
                       <Rocket className="w-4 h-4 mr-2" />
                     )}
-                    <span>{isBuilding.prod ? "Deploying..." : "🚀 Production Deploy"}</span>
+                    <span>{isBuilding.prod ? "Deploying..." : "Deploy to Production"}</span>
                   </Button>
-                </div>
-
-                <div className="text-xs text-muted-foreground p-3 bg-white/50 rounded border">
-                  <div className="font-medium mb-1">AI Features Enabled:</div>
-                  <div>✅ Smart test selection • ✅ Parallel execution • ✅ Predictive caching</div>
-                  <div>✅ Auto-rollback detection • ✅ Performance optimization</div>
                 </div>
               </CardContent>
             </Card>
 
             {/* AI Prediction Card */}
-            {aiInsights && (
+            {aiInsights ? (
               <Card className="border-2 border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -517,7 +499,7 @@ export function BuildPipelines() {
                   <div className="p-3 bg-white/70 dark:bg-gray-800/70 rounded border">
                     <div className="text-sm font-medium mb-2 flex items-center">
                       <Zap className="w-4 h-4 mr-1 text-yellow-500" />
-                      Quick Recommendations
+                      Recommendations
                     </div>
                     <div className="space-y-1 text-xs">
                       {aiInsights.recommendations.slice(0, 2).map((rec, index) => (
@@ -530,12 +512,20 @@ export function BuildPipelines() {
                   </div>
                 </CardContent>
               </Card>
+            ) : (
+              <Card className="border-2 border-gray-200">
+                <CardContent className="p-8 text-center">
+                  <Brain className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <div className="text-lg font-medium text-gray-600 mb-2">No AI Insights Available</div>
+                  <div className="text-sm text-gray-500">Connect to pipeline feed for AI predictions</div>
+                </CardContent>
+              </Card>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          {pipelineStats && (
+          {pipelineStats ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
@@ -555,22 +545,28 @@ export function BuildPipelines() {
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-blue-600 mb-1">{pipelineStats.avgBuildTime}</div>
                   <div className="text-sm text-muted-foreground">Avg Build Time</div>
-                  <div className="text-xs text-green-600 mt-1">▼ 15% improvement</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-purple-600 mb-1">{pipelineStats.successRate}</div>
                   <div className="text-sm text-muted-foreground">Success Rate</div>
-                  <div className="text-xs text-green-600 mt-1">▲ Above target</div>
                 </CardContent>
               </Card>
             </div>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <div className="text-lg font-medium text-gray-600 mb-2">No Analytics Data</div>
+                <div className="text-sm text-gray-500">Connect to your pipeline feed to view detailed analytics</div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-6">
-          {aiInsights && (
+          {aiInsights ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20">
                 <CardHeader>
@@ -618,22 +614,22 @@ export function BuildPipelines() {
                           <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-500 flex-shrink-0" />
                           <div>
                             <div className="text-sm font-medium">{suggestion}</div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Expected impact: High • Complexity: Medium
-                            </div>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  <div className="p-3 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/30 dark:to-purple-950/30 rounded border">
-                    <div className="text-sm font-medium mb-1">🎯 Next Sprint Focus</div>
-                    <div className="text-xs">Implement build caching optimization for 25% faster builds</div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Brain className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <div className="text-lg font-medium text-gray-600 mb-2">No AI Insights Available</div>
+                <div className="text-sm text-gray-500">Connect to your pipeline feed to get AI-powered insights and recommendations</div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>

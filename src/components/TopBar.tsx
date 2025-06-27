@@ -21,7 +21,7 @@ export function TopBar({ activeSection, selectedTool, onToolSelect }: TopBarProp
   const showQATools = activeSection === "qa-tools";
 
   return (
-    <header className="h-12 border-b border-border bg-black backdrop-blur supports-[backdrop-filter]:bg-black/95">
+    <header className="h-12 border-b border-border bg-black dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-black/95 dark:supports-[backdrop-filter]:bg-gray-900/95">
       <div className="flex items-center justify-between h-full px-6">
         {/* COS QA Logo on the left */}
         <div className="flex items-center space-x-3">
@@ -44,7 +44,7 @@ export function TopBar({ activeSection, selectedTool, onToolSelect }: TopBarProp
                   <Button
                     variant={isSelected ? "secondary" : "ghost"}
                     size="sm"
-                    className="flex items-center space-x-2 h-8 px-2 text-white hover:bg-gray-700 bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 whitespace-nowrap"
+                    className="flex items-center space-x-2 h-8 px-2 text-white hover:bg-gray-700 bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 whitespace-nowrap"
                     onClick={() => onToolSelect?.(tool)}
                   >
                     <div className={`w-3 h-3 ${tool.color} rounded flex items-center justify-center`}>
@@ -55,7 +55,7 @@ export function TopBar({ activeSection, selectedTool, onToolSelect }: TopBarProp
                   {/* Orange line for selected, grey line for unselected */}
                   <div 
                     className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                      isSelected ? 'bg-orange-500' : 'bg-gray-600'
+                      isSelected ? 'bg-orange-500' : 'bg-gray-600 dark:bg-gray-500'
                     }`}
                   />
                 </div>
@@ -70,7 +70,7 @@ export function TopBar({ activeSection, selectedTool, onToolSelect }: TopBarProp
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="w-9 h-9 text-white hover:bg-gray-800"
+            className="w-9 h-9 text-white hover:bg-gray-800 dark:hover:bg-gray-700"
           >
             {isDark ? (
               <Sun className="w-4 h-4" />
@@ -79,7 +79,7 @@ export function TopBar({ activeSection, selectedTool, onToolSelect }: TopBarProp
             )}
           </Button>
           
-          <Button variant="ghost" size="icon" className="w-9 h-9 text-white hover:bg-gray-800">
+          <Button variant="ghost" size="icon" className="w-9 h-9 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
             <User className="w-4 h-4" />
           </Button>
         </div>

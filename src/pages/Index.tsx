@@ -6,16 +6,16 @@ import { DashboardContent } from "../components/DashboardContent";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("endpoints");
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Always start collapsed
   const [selectedTool, setSelectedTool] = useState(null);
 
   return (
     <div className="min-h-screen bg-background flex w-full">
-      <Sidebar 
-        activeSection={activeSection} 
+      <Sidebar
+        activeSection={activeSection}
         setActiveSection={setActiveSection}
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
+        isCollapsed={true} // Force always collapsed
+        setIsCollapsed={() => {}} // Disable toggle functionality
       />
       <div className="flex-1 flex flex-col">
         <TopBar 

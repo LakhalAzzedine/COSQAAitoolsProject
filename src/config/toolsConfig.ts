@@ -8,7 +8,8 @@ Accessibility,
 Gauge,
 Bug,
 FileCode,
-FileText
+FileText,
+Brain
 } from "lucide-react";
 
 export interface Tool {
@@ -21,6 +22,7 @@ hasSpecialLayout: boolean;
 useJiraIntegration?: boolean;
 useUrlIntegration?: boolean;
 isChatbot?: boolean;
+isAIPowered?: boolean;
 }
 
 export const tools: Tool[] = [
@@ -54,11 +56,12 @@ useUrlIntegration: true
 {
 id: "json-analyzer",
 name: "JSON Analyzer",
-description: "Analyze and validate JSON structures",
+description: "AI-powered JSON analysis with security & performance insights",
 icon: Code,
-color: "bg-orange-500",
+color: "bg-gradient-to-r from-orange-500 to-red-500",
 hasSpecialLayout: true,
-useUrlIntegration: true
+useUrlIntegration: true,
+isAIPowered: true
 },
 {
 id: "ada-analyzer",
