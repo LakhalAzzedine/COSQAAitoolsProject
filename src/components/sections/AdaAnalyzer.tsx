@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accessibility, Zap, Download, Eye, Send, AlertCircle, CheckCircle } from "lucide-react";
+import { Accessibility, Zap, Download, Eye, Send, AlertCircle, CheckCircle, TestTube } from "lucide-react";
 import { InfoPopover } from "@/components/ui/info-popover";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
+import { useQTestIntegration } from "@/hooks/useQTestIntegration";
 
 interface AdaAnalyzerProps {
   jiraData?: any;
@@ -24,6 +24,7 @@ export function AdaAnalyzer({ jiraData, urlData, onConfigOpen }: AdaAnalyzerProp
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingJira, setIsCreatingJira] = useState(false);
   const { toast } = useToast();
+  const { isCreatingQTest, createInQTest } = useQTestIntegration();
 
   const handleAnalyze = async () => {
     if (!url.trim()) {
@@ -108,6 +109,26 @@ export function AdaAnalyzer({ jiraData, urlData, onConfigOpen }: AdaAnalyzerProp
       title: "Export Complete",
       description: "ADA analysis exported successfully",
     });
+  };
+
+  const createInQTestHandler = async () => {
+    if (!analysisResult) {
+      toast({
+        title: "Error",
+        description: "Please analyze accessibility first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const analysisData = {
+      analysis: analysisResult,
+      url: url,
+      jiraData: jiraData,
+      timestamp: new Date().toISOString()
+    };
+    
+    await createInQTest(analysisData, "ada-analyzer", "accessibility analysis");
   };
 
   const generateTests = async () => {
@@ -297,6 +318,19 @@ export function AdaAnalyzer({ jiraData, urlData, onConfigOpen }: AdaAnalyzerProp
                   <Button onClick={exportReport} variant="outline" className="flex-1">
                     <Download className="w-4 h-4 mr-2" />
                     Export Report
+                  </Button>
+                  <Button 
+                    onClick={createInQTestHandler}
+                    disabled={isCreatingQTest}
+                    variant="outline" 
+                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                  >
+                    {isCreatingQTest ? (
+                      <TestTube className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <TestTube className="w-4 h-4 mr-2" />
+                    )}
+                    {isCreatingQTest ? "Creating..." : "Create in QTest"}
                   </Button>
                   <Button 
                     onClick={generateTests}

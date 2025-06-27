@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { FileCode, Zap, Download, FileText, Send, Eye, Brain, Target, Shield, CheckCircle2, AlertTriangle, TrendingUp, Filter } from "lucide-react";
+import { FileCode, Zap, Download, FileText, Send, Eye, Brain, Target, Shield, CheckCircle2, AlertTriangle, TrendingUp, Filter, TestTube } from "lucide-react";
 import { InfoPopover } from "@/components/ui/info-popover";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
+import { useQTestIntegration } from "@/hooks/useQTestIntegration";
 
 interface TestGeneratorProps {
   jiraData?: any;
@@ -55,6 +57,8 @@ interface AIInsight {
 }
 
 export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
+  const { isCreatingQTest, createInQTest } = useQTestIntegration();
+
   const [jiraStoryId, setJiraStoryId] = useState("");
   const [testRequirements, setTestRequirements] = useState("");
   const [generatedTests, setGeneratedTests] = useState("");
@@ -459,6 +463,28 @@ ${testSuites.map(suite =>
     ).join('\n')}`;
   };
 
+  const createInQTestHandler = async () => {
+    if (!generatedTests && testSuites.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please generate test cases first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const testData = {
+      generatedTests: generatedTests,
+      testSuites: testSuites,
+      aiInsights: aiInsights,
+      metrics: analysisMetrics,
+      jiraData: jiraData,
+      timestamp: new Date().toISOString()
+    };
+    
+    await createInQTest(testData, "test-generator", "test cases");
+  };
+
   const createJiraTicket = async () => {
     if (!generatedTests) {
       toast({
@@ -539,7 +565,7 @@ ${testSuites.map(suite =>
             </div>
             <InfoPopover
               title="AI-Powered Test Generation"
-              content="Generate comprehensive test suites with AI-driven insights, risk analysis, and automation recommendations."
+              content="Generate comprehensive test suites with AI-driven insights, risk assessment, and automation recommendations."
               steps={[
                 "Enter JIRA Story ID or requirements",
                 "AI analyzes and generates structured test cases",
@@ -749,6 +775,20 @@ ${testSuites.map(suite =>
                   <TrendingUp className="w-6 h-6 mb-2" />
                   <span>Test Matrix</span>
                   <span className="text-xs text-muted-foreground">CSV for spreadsheets</span>
+                </Button>
+                <Button 
+                  onClick={createInQTestHandler}
+                  disabled={isCreatingQTest || (!generatedTests && testSuites.length === 0)}
+                  variant="outline" 
+                  className="h-20 flex-col bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 dark:border-blue-700"
+                >
+                  {isCreatingQTest ? (
+                    <TestTube className="w-6 h-6 mb-2 animate-spin" />
+                  ) : (
+                    <TestTube className="w-6 h-6 mb-2" />
+                  )}
+                  <span>{isCreatingQTest ? "Creating..." : "Create in QTest"}</span>
+                  <span className="text-xs text-muted-foreground">Enhanced QTest cases</span>
                 </Button>
                 <Button 
                   onClick={createJiraTicket}

@@ -37,8 +37,6 @@ export function ToolContent({
       return (
         <TestGenerator
           jiraData={jiraStoryData}
-          onJiraStoryFetched={onJiraStoryFetched}
-          onFilesProcessed={onFilesProcessed}
           onConfigOpen={onConfigOpen}
         />
       );

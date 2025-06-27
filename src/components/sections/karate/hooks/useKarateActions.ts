@@ -3,10 +3,12 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
+import { useQTestIntegration } from "@/hooks/useQTestIntegration";
 
 export function useKarateActions() {
   const [isCreatingJira, setIsCreatingJira] = useState(false);
   const { toast } = useToast();
+  const { isCreatingQTest, createInQTest } = useQTestIntegration();
 
   const createJiraTicket = async (generatedScripts: string, jiraData?: any) => {
     if (!generatedScripts) {
@@ -66,6 +68,16 @@ export function useKarateActions() {
     }
   };
 
+  const createKarateInQTest = async (generatedScripts: string, jiraData?: any) => {
+    const scriptData = {
+      scripts: generatedScripts,
+      jiraData: jiraData,
+      timestamp: new Date().toISOString()
+    };
+    
+    return await createInQTest(scriptData, "karate-script-writer", "scripts");
+  };
+
   const exportScripts = (generatedScripts: string, jiraStoryId: string, jiraData: any, format: 'txt' | 'json') => {
     if (!generatedScripts) {
       toast({
@@ -114,7 +126,9 @@ export function useKarateActions() {
 
   return {
     isCreatingJira,
+    isCreatingQTest,
     createJiraTicket,
+    createKarateInQTest,
     exportScripts
   };
 }

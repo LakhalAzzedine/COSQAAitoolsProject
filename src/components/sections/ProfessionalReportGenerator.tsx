@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -201,12 +200,12 @@ export function ProfessionalReportGenerator({ toolId, analysisData, metrics }: P
   ];
 
   return (
-    <Card className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-teal-50">
+    <Card className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-950/50 dark:to-teal-950/50 dark:bg-gray-900 dark:border-gray-700">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <FileText className="w-5 h-5 text-green-600" />
-          <span>📋 Professional Report Generator</span>
-          <Badge variant="outline" className="bg-green-100 text-green-700">
+          <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <span className="dark:text-gray-100">📋 Professional Report Generator</span>
+          <Badge variant="outline" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700">
             Enterprise Grade
           </Badge>
         </CardTitle>
@@ -215,35 +214,35 @@ export function ProfessionalReportGenerator({ toolId, analysisData, metrics }: P
         <div className="space-y-6">
           {/* Quality Metrics Overview */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-blue-600">{currentMetrics.testCoverage}%</div>
-              <div className="text-xs text-gray-600">Test Coverage</div>
+            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{currentMetrics.testCoverage}%</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Test Coverage</div>
               <Progress value={currentMetrics.testCoverage} className="mt-1 h-1" />
             </div>
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-green-600">{currentMetrics.qualityIndex}%</div>
-              <div className="text-xs text-gray-600">Quality Index</div>
+            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{currentMetrics.qualityIndex}%</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Quality Index</div>
               <Progress value={currentMetrics.qualityIndex} className="mt-1 h-1" />
             </div>
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-purple-600">{currentMetrics.automationRate}%</div>
-              <div className="text-xs text-gray-600">Automation</div>
+            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{currentMetrics.automationRate}%</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Automation</div>
               <Progress value={currentMetrics.automationRate} className="mt-1 h-1" />
             </div>
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-yellow-600">{currentMetrics.defectDensity}</div>
-              <div className="text-xs text-gray-600">Defect Density</div>
+            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{currentMetrics.defectDensity}</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Defect Density</div>
             </div>
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-red-600">{currentMetrics.riskScore}%</div>
-              <div className="text-xs text-gray-600">Risk Score</div>
+            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{currentMetrics.riskScore}%</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Risk Score</div>
               <Progress value={currentMetrics.riskScore} className="mt-1 h-1" />
             </div>
           </div>
 
           {/* Report Templates */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">📝 Report Templates</h3>
+            <h3 className="font-semibold text-lg dark:text-gray-100">📝 Report Templates</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {reportTemplates.map((template) => {
                 const Icon = template.icon;
@@ -252,14 +251,14 @@ export function ProfessionalReportGenerator({ toolId, analysisData, metrics }: P
                     key={template.id}
                     className={`p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
                       selectedTemplate === template.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 bg-white'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600'
+                        : 'border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700'
                     }`}
                     onClick={() => setSelectedTemplate(template.id)}
                   >
                     <div className="flex items-center space-x-2">
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{template.name}</span>
+                      <Icon className="w-4 h-4 dark:text-gray-300" />
+                      <span className="text-sm font-medium dark:text-gray-200">{template.name}</span>
                     </div>
                   </div>
                 );
@@ -272,7 +271,7 @@ export function ProfessionalReportGenerator({ toolId, analysisData, metrics }: P
             <Button
               onClick={() => generateProfessionalReport('html')}
               disabled={isGenerating}
-              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 dark:from-blue-600 dark:to-purple-600 dark:hover:from-blue-700 dark:hover:to-purple-700"
             >
               {isGenerating ? (
                 <Clock className="w-4 h-4 mr-2 animate-spin" />
@@ -285,6 +284,7 @@ export function ProfessionalReportGenerator({ toolId, analysisData, metrics }: P
               onClick={() => generateProfessionalReport('json')}
               disabled={isGenerating}
               variant="outline"
+              className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               <FileText className="w-4 h-4 mr-2" />
               Export Data
@@ -292,12 +292,12 @@ export function ProfessionalReportGenerator({ toolId, analysisData, metrics }: P
           </div>
 
           {/* Professional Insights */}
-          <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg border dark:border-gray-700">
             <div className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
               <div>
-                <h4 className="font-semibold text-gray-900">Professional Quality Insights</h4>
-                <ul className="text-sm text-gray-700 mt-1 space-y-1">
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100">Professional Quality Insights</h4>
+                <ul className="text-sm text-gray-700 dark:text-gray-300 mt-1 space-y-1">
                   <li>• AI-powered quality metrics exceed industry benchmarks</li>
                   <li>• Automated risk assessment identifies critical focus areas</li>
                   <li>• Predictive analytics suggest optimal testing strategies</li>

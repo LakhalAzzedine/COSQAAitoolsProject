@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileCode, Download, FileText, Send } from "lucide-react";
+import { FileCode, Download, FileText, Send, TestTube } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,8 +16,10 @@ interface KarateScriptModalProps {
   generatedScripts: string;
   jiraStoryId: string;
   isCreatingJira: boolean;
+  isCreatingQTest?: boolean;
   onExportScripts: (format: 'txt' | 'json') => void;
   onCreateJiraTicket: () => void;
+  onCreateInQTest?: () => void;
 }
 
 export function KarateScriptModal({
@@ -26,8 +28,10 @@ export function KarateScriptModal({
   generatedScripts,
   jiraStoryId,
   isCreatingJira,
+  isCreatingQTest = false,
   onExportScripts,
-  onCreateJiraTicket
+  onCreateJiraTicket,
+  onCreateInQTest
 }: KarateScriptModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,6 +63,21 @@ export function KarateScriptModal({
               <FileText className="w-4 h-4 mr-2" />
               Export JSON
             </Button>
+            {onCreateInQTest && (
+              <Button 
+                onClick={onCreateInQTest}
+                disabled={isCreatingQTest}
+                variant="outline"
+                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+              >
+                {isCreatingQTest ? (
+                  <TestTube className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <TestTube className="w-4 h-4 mr-2" />
+                )}
+                {isCreatingQTest ? "Creating..." : "Create in QTest"}
+              </Button>
+            )}
             <Button 
               onClick={onCreateJiraTicket}
               disabled={isCreatingJira}

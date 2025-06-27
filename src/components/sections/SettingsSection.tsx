@@ -12,170 +12,170 @@ export function SettingsSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Configure your QA platform preferences</p>
+        <h1 className="text-2xl font-bold text-foreground dark:text-gray-100">Settings</h1>
+        <p className="text-muted-foreground dark:text-gray-400">Configure your QA platform preferences</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="dark:bg-gray-900 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 dark:text-gray-100">
               <Palette className="w-5 h-5" />
               <span>Appearance</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="dark-mode">Dark Mode</Label>
+              <Label htmlFor="dark-mode" className="dark:text-gray-200">Dark Mode</Label>
               <Switch id="dark-mode" />
             </div>
             
             <div className="space-y-2">
-              <Label>Theme Color</Label>
+              <Label className="dark:text-gray-200">Theme Color</Label>
               <Select defaultValue="blue">
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="blue">Blue</SelectItem>
-                  <SelectItem value="green">Green</SelectItem>
-                  <SelectItem value="purple">Purple</SelectItem>
-                  <SelectItem value="orange">Orange</SelectItem>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                  <SelectItem value="blue" className="dark:text-gray-200 dark:hover:bg-gray-700">Blue</SelectItem>
+                  <SelectItem value="green" className="dark:text-gray-200 dark:hover:bg-gray-700">Green</SelectItem>
+                  <SelectItem value="purple" className="dark:text-gray-200 dark:hover:bg-gray-700">Purple</SelectItem>
+                  <SelectItem value="orange" className="dark:text-gray-200 dark:hover:bg-gray-700">Orange</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="animations">Enable Animations</Label>
+              <Label htmlFor="animations" className="dark:text-gray-200">Enable Animations</Label>
               <Switch id="animations" defaultChecked />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-gray-900 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 dark:text-gray-100">
               <Bell className="w-5 h-5" />
               <span>Notifications</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="email-notifications">Email Notifications</Label>
+              <Label htmlFor="email-notifications" className="dark:text-gray-200">Email Notifications</Label>
               <Switch id="email-notifications" defaultChecked />
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="build-alerts">Build Failure Alerts</Label>
+              <Label htmlFor="build-alerts" className="dark:text-gray-200">Build Failure Alerts</Label>
               <Switch id="build-alerts" defaultChecked />
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="endpoint-alerts">Endpoint Down Alerts</Label>
+              <Label htmlFor="endpoint-alerts" className="dark:text-gray-200">Endpoint Down Alerts</Label>
               <Switch id="endpoint-alerts" defaultChecked />
             </div>
 
             <div className="space-y-2">
-              <Label>Alert Frequency</Label>
+              <Label className="dark:text-gray-200">Alert Frequency</Label>
               <Select defaultValue="immediate">
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="immediate">Immediate</SelectItem>
-                  <SelectItem value="hourly">Hourly Digest</SelectItem>
-                  <SelectItem value="daily">Daily Summary</SelectItem>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                  <SelectItem value="immediate" className="dark:text-gray-200 dark:hover:bg-gray-700">Immediate</SelectItem>
+                  <SelectItem value="hourly" className="dark:text-gray-200 dark:hover:bg-gray-700">Hourly Digest</SelectItem>
+                  <SelectItem value="daily" className="dark:text-gray-200 dark:hover:bg-gray-700">Daily Summary</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-gray-900 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 dark:text-gray-100">
               <Brain className="w-5 h-5" />
               <span>AI Configuration</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>AI Model</Label>
+              <Label className="dark:text-gray-200">AI Model</Label>
               <Select defaultValue="gpt-4">
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gpt-4">GPT-4</SelectItem>
-                  <SelectItem value="gpt-3.5">GPT-3.5 Turbo</SelectItem>
-                  <SelectItem value="claude">Claude</SelectItem>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                  <SelectItem value="gpt-4" className="dark:text-gray-200 dark:hover:bg-gray-700">GPT-4</SelectItem>
+                  <SelectItem value="gpt-3.5" className="dark:text-gray-200 dark:hover:bg-gray-700">GPT-3.5 Turbo</SelectItem>
+                  <SelectItem value="claude" className="dark:text-gray-200 dark:hover:bg-gray-700">Claude</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="api-key">API Key</Label>
+              <Label htmlFor="api-key" className="dark:text-gray-200">API Key</Label>
               <Input 
                 id="api-key" 
                 type="password" 
                 placeholder="Enter your AI API key"
-                className="font-mono"
+                className="font-mono dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
               />
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="smart-suggestions">Smart Suggestions</Label>
+              <Label htmlFor="smart-suggestions" className="dark:text-gray-200">Smart Suggestions</Label>
               <Switch id="smart-suggestions" defaultChecked />
             </div>
 
-            <Separator />
+            <Separator className="dark:bg-gray-700" />
 
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
               Test AI Connection
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-gray-900 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 dark:text-gray-100">
               <Shield className="w-5 h-5" />
               <span>Security</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="two-factor">Two-Factor Authentication</Label>
+              <Label htmlFor="two-factor" className="dark:text-gray-200">Two-Factor Authentication</Label>
               <Switch id="two-factor" />
             </div>
             
             <div className="space-y-2">
-              <Label>Session Timeout</Label>
+              <Label className="dark:text-gray-200">Session Timeout</Label>
               <Select defaultValue="8h">
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1h">1 Hour</SelectItem>
-                  <SelectItem value="4h">4 Hours</SelectItem>
-                  <SelectItem value="8h">8 Hours</SelectItem>
-                  <SelectItem value="24h">24 Hours</SelectItem>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                  <SelectItem value="1h" className="dark:text-gray-200 dark:hover:bg-gray-700">1 Hour</SelectItem>
+                  <SelectItem value="4h" className="dark:text-gray-200 dark:hover:bg-gray-700">4 Hours</SelectItem>
+                  <SelectItem value="8h" className="dark:text-gray-200 dark:hover:bg-gray-700">8 Hours</SelectItem>
+                  <SelectItem value="24h" className="dark:text-gray-200 dark:hover:bg-gray-700">24 Hours</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="activity-logs">Activity Logging</Label>
+              <Label htmlFor="activity-logs" className="dark:text-gray-200">Activity Logging</Label>
               <Switch id="activity-logs" defaultChecked />
             </div>
 
-            <Separator />
+            <Separator className="dark:bg-gray-700" />
 
             <div className="space-y-2">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
                 Change Password
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
                 Download Activity Log
               </Button>
             </div>
@@ -183,23 +183,23 @@ export function SettingsSection() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="dark:bg-gray-900 dark:border-gray-800">
         <CardHeader>
-          <CardTitle>System Information</CardTitle>
+          <CardTitle className="dark:text-gray-100">System Information</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-lg font-semibold">v2.1.0</div>
-              <div className="text-sm text-muted-foreground">Platform Version</div>
+              <div className="text-lg font-semibold dark:text-gray-100">v2.1.0</div>
+              <div className="text-sm text-muted-foreground dark:text-gray-400">Platform Version</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-semibold">99.9%</div>
-              <div className="text-sm text-muted-foreground">Uptime</div>
+              <div className="text-lg font-semibold dark:text-gray-100">99.9%</div>
+              <div className="text-sm text-muted-foreground dark:text-gray-400">Uptime</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-semibold">156ms</div>
-              <div className="text-sm text-muted-foreground">Avg Response Time</div>
+              <div className="text-lg font-semibold dark:text-gray-100">156ms</div>
+              <div className="text-sm text-muted-foreground dark:text-gray-400">Avg Response Time</div>
             </div>
           </div>
         </CardContent>

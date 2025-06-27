@@ -10,9 +10,9 @@ interface ToolsToolbarProps {
 
 export function ToolsToolbar({ selectedTool, onToolSelect }: ToolsToolbarProps) {
   return (
-    <Card>
+    <Card className="dark:bg-gray-900 dark:border-gray-800">
       <CardHeader>
-        <CardTitle className="text-lg">QA AI Tools</CardTitle>
+        <CardTitle className="text-lg text-foreground dark:text-gray-100">QA AI Tools</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">
@@ -24,7 +24,7 @@ export function ToolsToolbar({ selectedTool, onToolSelect }: ToolsToolbarProps) 
                 key={tool.id}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
-                className="flex items-center space-x-2 h-10 px-3 bg-gray-800 text-white hover:bg-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+                className="flex items-center space-x-2 h-10 px-3 bg-gray-800 text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600"
                 onClick={() => onToolSelect(tool)}
               >
                 <div className={`w-4 h-4 ${tool.color} rounded flex items-center justify-center`}>

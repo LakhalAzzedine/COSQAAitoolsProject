@@ -122,16 +122,16 @@ export function Chatbot({
 
   return (
     <div className="space-y-4">
-      <Card className="h-[600px] flex flex-col">
+      <Card className="h-[600px] flex flex-col dark:bg-gray-900 dark:border-gray-800">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
                 <MessageCircle className="w-4 h-4 text-white" />
               </div>
-              <span>QA Chatbot</span>
+              <span className="text-foreground dark:text-gray-100">QA Chatbot</span>
               {jiraData && (
-                <Badge variant="secondary">Jira: {jiraData.id}</Badge>
+                <Badge variant="secondary" className="dark:bg-gray-700 dark:text-gray-300">Jira: {jiraData.id}</Badge>
               )}
             </div>
             <InfoPopover
@@ -147,7 +147,7 @@ export function Chatbot({
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1 mb-4 p-4 border rounded-lg">
+          <ScrollArea className="flex-1 mb-4 p-4 border rounded-lg dark:border-gray-700 dark:bg-gray-800">
             <div className="space-y-4">
               {messages.map((message) => (
                 <div
@@ -165,7 +165,7 @@ export function Chatbot({
                     className={`max-w-[80%] p-3 rounded-lg ${
                       message.sender === 'user'
                         ? 'bg-blue-500 text-white'
-                        : 'bg-muted'
+                        : 'bg-muted dark:bg-gray-700 dark:text-gray-200'
                     }`}
                   >
                     <p className="text-sm">{message.content}</p>
@@ -174,7 +174,7 @@ export function Chatbot({
                     </p>
                   </div>
                   {message.sender === 'user' && (
-                    <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 bg-gray-500 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-white" />
                     </div>
                   )}
@@ -185,8 +185,8 @@ export function Chatbot({
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <Bot className="w-4 h-4 text-white" />
                   </div>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <p className="text-sm">Typing...</p>
+                  <div className="bg-muted dark:bg-gray-700 p-3 rounded-lg">
+                    <p className="text-sm dark:text-gray-200">Typing...</p>
                   </div>
                 </div>
               )}
@@ -200,10 +200,12 @@ export function Chatbot({
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
               disabled={isLoading}
+              className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
             />
             <Button 
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
+              className="dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               <Send className="w-4 h-4" />
             </Button>
