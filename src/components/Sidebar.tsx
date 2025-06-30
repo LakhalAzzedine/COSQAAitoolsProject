@@ -1,5 +1,5 @@
 
-import { Activity, Brain, Hammer, BookOpen, HelpCircle, Wifi, WifiOff, Grid3X3 } from "lucide-react";
+import { Activity, Brain, Hammer, BookOpen, HelpCircle, Wifi, WifiOff, Grid3X3, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TeamInfoPopup } from "./TeamInfoPopup";
 
@@ -22,6 +22,12 @@ const menuItems = [
     label: "QA AI Tools",
     icon: Brain,
     badge: null
+  },
+  {
+    id: "team-analytics",
+    label: "Team Analytics",
+    icon: BarChart3,
+    badge: "JQL"
   },
   {
     id: "pipelines",

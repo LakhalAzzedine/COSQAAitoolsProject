@@ -1,20 +1,189 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cos-qa-nexus-ui</title>
-    <meta name="description" content="COS QA AI Generated Project" />
-    <meta name="author" content="COS QA Team" />
 
-    <meta property="og:title" content="cos-qa-AiTools-ui" />
-    <meta property="og:description" content="COS QA AI Generated Project" />
-    <meta property="og:type" content="website" />
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  </head>
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+@layer base {
+:root {
+--background: 0 0% 100%;
+--foreground: 220 13% 18%;
+
+--card: 0 0% 98%;
+--card-foreground: 220 13% 18%;
+
+--popover: 0 0% 100%;
+--popover-foreground: 220 13% 18%;
+
+--primary: 262 83% 58%;
+--primary-foreground: 0 0% 100%;
+
+--secondary: 220 14% 96%;
+--secondary-foreground: 220 13% 18%;
+
+--muted: 220 14% 96%;
+--muted-foreground: 220 9% 46%;
+
+--accent: 220 14% 96%;
+--accent-foreground: 220 13% 18%;
+
+--destructive: 0 84% 60%;
+--destructive-foreground: 0 0% 98%;
+
+--border: 220 13% 91%;
+--input: 220 13% 91%;
+--ring: 262 83% 58%;
+
+--radius: 0.75rem;
+
+--sidebar-background: 0 0% 100%;
+--sidebar-foreground: 220 13% 18%;
+--sidebar-primary: 262 83% 58%;
+--sidebar-primary-foreground: 0 0% 100%;
+--sidebar-accent: 220 14% 96%;
+--sidebar-accent-foreground: 220 13% 18%;
+--sidebar-border: 220 13% 91%;
+--sidebar-ring: 262 83% 58%;
+}
+
+.dark {
+--background: 0 0% 0%;
+--foreground: 0 0% 98%;
+
+--card: 0 0% 3%;
+--card-foreground: 0 0% 98%;
+
+--popover: 0 0% 3%;
+--popover-foreground: 0 0% 98%;
+
+--primary: 25 95% 53%;
+--primary-foreground: 0 0% 9%;
+
+--secondary: 0 0% 9%;
+--secondary-foreground: 0 0% 98%;
+
+--muted: 0 0% 9%;
+--muted-foreground: 0 0% 63.9%;
+
+--accent: 0 0% 9%;
+--accent-foreground: 0 0% 98%;
+
+--destructive: 0 62.8% 30.6%;
+--destructive-foreground: 0 0% 98%;
+
+--border: 0 0% 14.9%;
+--input: 0 0% 14.9%;
+--ring: 25 95% 53%;
+
+--sidebar-background: 0 0% 2%;
+--sidebar-foreground: 0 0% 95%;
+--sidebar-primary: 25 95% 53%;
+--sidebar-primary-foreground: 0 0% 9%;
+--sidebar-accent: 0 0% 9%;
+--sidebar-accent-foreground: 0 0% 95%;
+--sidebar-border: 0 0% 14.9%;
+--sidebar-ring: 25 95% 53%;
+}
+}
+
+@layer base {
+* {
+@apply border-border;
+}
+
+body {
+@apply bg-background text-foreground;
+background: linear-gradient(135deg,
+rgba(139, 92, 246, 0.1) 0%,
+rgba(168, 85, 247, 0.08) 25%,
+rgba(59, 130, 246, 0.06) 50%,
+rgba(37, 99, 235, 0.04) 75%,
+rgba(255, 255, 255, 1) 100%
+);
+min-height: 100vh;
+}
+
+.dark body {
+background: radial-gradient(ellipse at top, rgba(255, 120, 0, 0.15) 0%, rgba(0, 0, 0, 0.9) 25%, rgba(0, 0, 0, 1) 100%),
+linear-gradient(135deg, rgba(255, 140, 0, 0.1) 0%, rgba(255, 69, 0, 0.05) 25%, rgba(0, 0, 0, 1) 50%);
+}
+}
+
+/* Modern AI Gradient Animation */
+@keyframes gradientShift {
+0% {
+background-position: 0% 50%;
+}
+50% {
+background-position: 100% 50%;
+}
+100% {
+background-position: 0% 50%;
+}
+}
+
+.cos-qa-gradient {
+background: linear-gradient(-45deg,
+rgba(139, 92, 246, 0.9),
+rgba(168, 85, 247, 0.8),
+rgba(59, 130, 246, 0.7),
+rgba(37, 99, 235, 0.6),
+rgba(255, 255, 255, 0.9)
+);
+background-size: 400% 400%;
+animation: gradientShift 15s ease infinite;
+}
+
+.dark .cos-qa-gradient {
+background: linear-gradient(-45deg, #000000, #1a0a00, #ff8c00, #ff4500, #000000);
+background-size: 400% 400%;
+animation: gradientShift 20s ease infinite;
+}
+
+/* Modern AI accent effects for light mode */
+.ai-gradient-accent {
+background: linear-gradient(135deg,
+rgba(139, 92, 246, 0.1) 0%,
+rgba(168, 85, 247, 0.08) 25%,
+rgba(59, 130, 246, 0.06) 50%,
+rgba(255, 255, 255, 0.95) 100%
+);
+}
+
+.ai-border-gradient {
+border: 1px solid transparent;
+background: linear-gradient(white, white) padding-box,
+linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.2)) border-box;
+}
+
+.ai-card-hover {
+transition: all 0.3s ease;
+border: 1px solid rgba(139, 92, 246, 0.1);
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+}
+
+.ai-card-hover:hover {
+border-color: rgba(139, 92, 246, 0.3);
+background: rgba(255, 255, 255, 0.98);
+box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);
+transform: translateY(-2px);
+}
+
+.ai-glow-primary {
+box-shadow: 0 0 20px rgba(139, 92, 246, 0.2), 0 0 40px rgba(168, 85, 247, 0.1);
+}
+
+/* Orange accent glow effects for dark mode */
+.dark .glow-orange {
+box-shadow: 0 0 20px rgba(255, 140, 0, 0.3), 0 0 40px rgba(255, 69, 0, 0.1);
+}
+
+.dark .border-orange-accent {
+border-color: rgba(255, 140, 0, 0.5);
+}
+
+.dark .bg-orange-gradient {
+background: linear-gradient(135deg, rgba(255, 140, 0, 0.1) 0%, rgba(255, 69, 0, 0.05) 100%);
+}

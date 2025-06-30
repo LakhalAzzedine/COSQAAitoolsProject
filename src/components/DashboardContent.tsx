@@ -3,6 +3,7 @@ import { EndpointsMonitor } from "./sections/EndpointsMonitor";
 import { QATools } from "./sections/QATools";
 import { BuildPipelines } from "./sections/BuildPipelines";
 import { SeleniumGrid } from "./sections/SeleniumGrid";
+import { JiraDailyDashboard } from "./sections/JiraDailyDashboard";
 
 interface DashboardContentProps {
   activeSection: string;
@@ -22,6 +23,8 @@ export function DashboardContent({ activeSection, selectedTool, onToolSelect }: 
             onToolSelect={onToolSelect}
           />
         );
+      case "team-analytics":
+        return <JiraDailyDashboard />;
       case "pipelines":
         return <BuildPipelines />;
       case "selenium-qa":

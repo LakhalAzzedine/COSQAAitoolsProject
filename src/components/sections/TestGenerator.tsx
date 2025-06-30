@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,10 +75,10 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
   const { toast } = useToast();
 
   const handleGenerateTests = async () => {
-    if (!jiraStoryId.trim() && !testRequirements.trim()) {
+    if (!jiraStoryId.trim() && !testRequirements.trim() && !jiraData) {
       toast({
         title: "Error",
-        description: "Please enter a JIRA Story ID or test requirements.",
+        description: "Please enter a JIRA Story ID, test requirements, or ensure JIRA data is available.",
         variant: "destructive",
       });
       return;
@@ -95,23 +94,23 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
-      let enhancedJiraData = null;
+      let enhancedJiraData = jiraData || null;
       
-      if (jiraStoryId.trim()) {
+      // If we have existing jiraData with acceptance criteria, use it directly
+      if (jiraData && jiraData.acceptanceCriteria && jiraData.acceptanceCriteria.length > 0) {
+        console.log(`Using existing JIRA data with ${jiraData.acceptanceCriteria.length} acceptance criteria`);
+        enhancedJiraData = jiraData;
+      } else if (jiraStoryId.trim()) {
+        // Fetch JIRA data if we don't have it
         const jiraEndpointUrl = getToolEndpointUrl("jira-integration", config);
         
         console.log(`Fetching JIRA story details for: ${jiraStoryId}`);
         
-        const jiraResponse = await fetch(jiraEndpointUrl, {
-          method: 'POST',
+        const jiraResponse = await fetch(`${jiraEndpointUrl}?jiraId=${encodeURIComponent(jiraStoryId.trim())}&action=fetchStory&includeAcceptanceCriteria=true`, {
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: "fetchStory",
-            jiraId: jiraStoryId,
-            toolId: "test-generator"
-          })
+          }
         });
         
         if (!jiraResponse.ok) {
@@ -120,22 +119,36 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         
         const jiraResult = await jiraResponse.json();
         
+        // Extract acceptance criteria from JIRA response
+        const extractedAC = extractAcceptanceCriteriaFromJira(jiraResult);
+        
         enhancedJiraData = {
           id: jiraStoryId,
-          title: jiraResult.title || jiraResult.summary || `Story ${jiraStoryId}`,
-          description: jiraResult.description || '',
-          acceptanceCriteria: jiraResult.acceptanceCriteria || []
+          key: jiraResult.key || jiraStoryId,
+          title: jiraResult.fields?.summary || jiraResult.title || jiraResult.summary || `Story ${jiraStoryId}`,
+          description: jiraResult.fields?.description || jiraResult.description || '',
+          acceptanceCriteria: extractedAC || [],
+          status: jiraResult.fields?.status?.name || jiraResult.status || 'Unknown',
+          assignee: jiraResult.fields?.assignee?.displayName || jiraResult.assignee || 'Unassigned'
         };
       }
 
       const endpointUrl = getToolEndpointUrl("test-generator", config);
       
-      const contentToAnalyze = testRequirements || 
-        (enhancedJiraData ? `${enhancedJiraData.title}\n\n${enhancedJiraData.description}` : '');
+      // Create enhanced prompt with acceptance criteria context
+      let contentToAnalyze = testRequirements;
+      
+      if (enhancedJiraData) {
+        const acContext = enhancedJiraData.acceptanceCriteria && enhancedJiraData.acceptanceCriteria.length > 0
+          ? `\n\nAcceptance Criteria:\n${enhancedJiraData.acceptanceCriteria.map((ac: string, i: number) => `AC${i + 1}: ${ac}`).join('\n')}`
+          : '';
+        
+        contentToAnalyze = `${enhancedJiraData.title}\n\n${enhancedJiraData.description}${acContext}`;
+      }
       
       const prompt = buildPromptWithContext("test-generator", contentToAnalyze, enhancedJiraData);
       
-      console.log(`Generating AI-powered test cases via ${endpointUrl}`);
+      console.log(`Generating AI-powered test cases with AC analysis via ${endpointUrl}`);
       
       const response = await fetch(endpointUrl, {
         method: 'POST',
@@ -146,13 +159,15 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
           prompt: prompt,
           requirements: contentToAnalyze,
           toolId: "test-generator",
-          jiraId: jiraStoryId || '',
+          jiraId: enhancedJiraData?.key || enhancedJiraData?.id || jiraStoryId || '',
           jiraData: enhancedJiraData,
+          acceptanceCriteria: enhancedJiraData?.acceptanceCriteria || [],
           aiEnhanced: true,
           generateStructured: true,
           includeInsights: true,
           includeMetrics: true,
-          includeSuites: true
+          includeSuites: true,
+          acAnalysis: true
         })
       });
       
@@ -186,9 +201,11 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         await calculateMetrics(testsText, enhancedJiraData);
       }
       
+      const acCount = enhancedJiraData?.acceptanceCriteria?.length || 0;
+      
       toast({
         title: "AI-Powered Test Cases Generated",
-        description: jiraStoryId ? `Advanced test suite generated for JIRA story ${jiraStoryId}` : "Comprehensive test cases generated with AI insights",
+        description: jiraStoryId ? `Test suite generated for JIRA story ${jiraStoryId}${acCount > 0 ? ` with ${acCount} AC analyzed` : ''}` : "Comprehensive test cases generated with AI insights",
       });
       
     } catch (error) {
@@ -201,6 +218,50 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to extract acceptance criteria from JIRA response
+  const extractAcceptanceCriteriaFromJira = (jiraData: any) => {
+    const criteria: string[] = [];
+    
+    if (jiraData.fields) {
+      // Check various custom field names for acceptance criteria
+      const acFields = [
+        'customfield_10000', 'customfield_10001', 'customfield_10002', 'customfield_12345',
+        'acceptanceCriteria', 'acceptance_criteria'
+      ];
+      
+      acFields.forEach(field => {
+        if (jiraData.fields[field]) {
+          const value = jiraData.fields[field];
+          if (typeof value === 'string') {
+            const splitCriteria = value.split(/\n|;|\*|-/).filter(c => c.trim().length > 0);
+            criteria.push(...splitCriteria.map(c => c.trim()));
+          } else if (Array.isArray(value)) {
+            criteria.push(...value.map(v => v.toString().trim()));
+          }
+        }
+      });
+      
+      // Also check description for AC patterns
+      if (jiraData.fields.description) {
+        const desc = jiraData.fields.description;
+        const acPatterns = [
+          /AC[:\s]+(.*?)(?=\n\n|\n[A-Z]|$)/gis,
+          /Acceptance Criteria[:\s]+(.*?)(?=\n\n|\n[A-Z]|$)/gis,
+          /Given.*?When.*?Then.*?(?=\n\n|\n[A-Z]|$)/gis
+        ];
+        
+        acPatterns.forEach(pattern => {
+          const matches = desc.match(pattern);
+          if (matches) {
+            criteria.push(...matches.map(m => m.trim()));
+          }
+        });
+      }
+    }
+    
+    return criteria.length > 0 ? criteria : null;
   };
 
   const generateAIInsights = async (testContent: string, jiraData: any) => {
@@ -556,30 +617,47 @@ ${testSuites.map(suite =>
                 <span className="text-xl font-bold">AI-Powered Test Generator</span>
                 <div className="text-sm text-gray-600 flex items-center space-x-2">
                   <Badge variant="outline" className="bg-purple-100 text-purple-700">AI Enhanced</Badge>
-                  <Badge variant="outline" className="bg-blue-100 text-blue-700">Professional Grade</Badge>
+                  <Badge variant="outline" className="bg-blue-100 text-blue-700">AC Analysis</Badge>
                   {jiraData && (
-                    <Badge variant="secondary">Jira: {jiraData.id}</Badge>
+                    <Badge variant="secondary">
+                      Jira: {jiraData.key || jiraData.id}
+                      {jiraData.acceptanceCriteria && jiraData.acceptanceCriteria.length > 0 && (
+                        <span className="ml-1 text-green-600">({jiraData.acceptanceCriteria.length} AC)</span>
+                      )}
+                    </Badge>
                   )}
                 </div>
               </div>
             </div>
             <InfoPopover
-              title="AI-Powered Test Generation"
-              content="Generate comprehensive test suites with AI-driven insights, risk assessment, and automation recommendations."
+              title="AI-Powered Test Generation with AC Analysis"
+              content="Generate comprehensive test suites with AI-driven insights, acceptance criteria analysis, risk assessment, and automation recommendations."
               steps={[
                 "Enter JIRA Story ID or requirements",
-                "AI analyzes and generates structured test cases",
+                "AI extracts and analyzes acceptance criteria",
+                "Generates structured test cases based on AC",
                 "Review AI insights and recommendations",
-                "Export professional test documentation",
-                "Create JIRA tickets with enhanced metadata"
+                "Export professional test documentation"
               ]}
             />
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Advanced AI-powered test case generation with intelligent analysis, risk assessment, and automation recommendations.
+            Advanced AI-powered test case generation with intelligent acceptance criteria analysis, risk assessment, and automation recommendations.
           </p>
+          
+          {/* Show AC preview if available */}
+          {jiraData && jiraData.acceptanceCriteria && jiraData.acceptanceCriteria.length > 0 && (
+            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <h4 className="font-medium text-green-800 dark:text-green-400 mb-2">
+                {jiraData.acceptanceCriteria.length} Acceptance Criteria Ready for Analysis
+              </h4>
+              <div className="text-sm text-green-700 dark:text-green-300">
+                AC will be automatically analyzed to generate comprehensive test cases
+              </div>
+            </div>
+          )}
           
           {analysisMetrics.qualityScore > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">

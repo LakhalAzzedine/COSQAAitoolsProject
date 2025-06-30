@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
 import { DashboardContent } from "../components/DashboardContent";
+import { QAChatbot } from "../components/sections/QAChatbot";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("endpoints");
@@ -11,8 +12,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex w-full">
-      <Sidebar
-        activeSection={activeSection}
+      <Sidebar 
+        activeSection={activeSection} 
         setActiveSection={setActiveSection}
         isCollapsed={true} // Force always collapsed
         setIsCollapsed={() => {}} // Disable toggle functionality
@@ -31,6 +32,10 @@ const Index = () => {
           />
         </main>
       </div>
+      <QAChatbot 
+        currentSection={activeSection}
+        selectedTool={selectedTool}
+      />
     </div>
   );
 };
