@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Download, Brain, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { defaultEndpointConfig, getToolEndpointUrl } from "@/config/backendConfig";
+import { AIProgressSpinner } from "@/components/ui/ai-progress-spinner";
 
 interface JiraIntegrationProps {
   onStoryFetched: (storyData: any) => void;
@@ -212,115 +212,142 @@ export function JiraIntegration({ onStoryFetched }: JiraIntegrationProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <ExternalLink className="w-5 h-5" />
-          <span>Enhanced Jira Integration</span>
-          <Badge variant="outline" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-            AI Enhanced
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="jira-story-id">Jira Story ID</Label>
-          <div className="flex space-x-2">
-            <Input
-              id="jira-story-id"
-              placeholder="e.g., PROJ-123"
-              value={jiraStoryId}
-              onChange={(e) => setJiraStoryId(e.target.value)}
-            />
-            <Button 
-              onClick={handleFetchStory}
-              disabled={!jiraStoryId.trim() || isLoading}
-            >
-              {isLoading ? <Download className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {isLoading ? "Fetching..." : "Fetch"}
-            </Button>
-          </div>
-        </div>
+    <div className="space-y-4">
+      {/* AI Progress Spinner for Fetching */}
+      <AIProgressSpinner 
+        isVisible={isLoading} 
+        messages={[
+          "Connecting to Jira...",
+          "Fetching story details...",
+          "Extracting acceptance criteria...",
+          "Processing story data...",
+          "Finalizing integration...",
+        ]}
+      />
 
-        {fetchedStory && (
-          <div className="space-y-4 p-4 bg-muted rounded-lg">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">{fetchedStory.title}</h4>
-              <div className="flex items-center space-x-2">
-                <Badge>{fetchedStory.status}</Badge>
-                {fetchedStory.acceptanceCriteria.length > 0 && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                    {fetchedStory.acceptanceCriteria.length} AC Found
-                  </Badge>
-                )}
+      {/* AI Progress Spinner for Analysis */}
+      <AIProgressSpinner 
+        isVisible={isAnalyzing} 
+        messages={[
+          "Analyzing acceptance criteria...",
+          "Generating AI insights...",
+          "Processing recommendations...",
+          "Finalizing analysis...",
+        ]}
+      />
+
+      {!isLoading && !isAnalyzing && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <ExternalLink className="w-5 h-5" />
+              <span>Enhanced Jira Integration</span>
+              <Badge variant="outline" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                AI Enhanced
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="jira-story-id">Jira Story ID</Label>
+              <div className="flex space-x-2">
+                <Input
+                  id="jira-story-id"
+                  placeholder="e.g., PROJ-123"
+                  value={jiraStoryId}
+                  onChange={(e) => setJiraStoryId(e.target.value)}
+                />
+                <Button 
+                  onClick={handleFetchStory}
+                  disabled={!jiraStoryId.trim() || isLoading}
+                >
+                  {isLoading ? <Download className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {isLoading ? "Fetching..." : "Fetch"}
+                </Button>
               </div>
             </div>
-            
-            <p className="text-sm text-muted-foreground">{fetchedStory.description}</p>
-            
-            {fetchedStory.acceptanceCriteria && fetchedStory.acceptanceCriteria.length > 0 && (
-              <div>
-                <h5 className="text-sm font-medium mb-2 flex items-center space-x-2">
-                  <Target className="w-4 h-4" />
-                  <span>Extracted Acceptance Criteria:</span>
-                </h5>
-                <ul className="space-y-2">
-                  {fetchedStory.acceptanceCriteria.map((ac: string, index: number) => (
-                    <li key={index} className="text-sm pl-3 py-2 border-l-3 border-orange-500 bg-orange-50 dark:bg-orange-900/20 rounded-r">
-                      <span className="font-medium text-orange-700 dark:text-orange-400">AC{index + 1}:</span> {ac}
-                    </li>
-                  ))}
-                </ul>
-                
-                {/* AI Analysis Buttons */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Button
-                    onClick={() => analyzeWithLLM('test-cases')}
-                    disabled={isAnalyzing}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Brain className="w-4 h-4 mr-2" />
-                    {isAnalyzing ? "Analyzing..." : "Generate Test Cases"}
-                  </Button>
-                  
-                  <Button
-                    onClick={() => analyzeWithLLM('validation')}
-                    disabled={isAnalyzing}
-                    size="sm"
-                    variant="outline"
-                    className="border-green-500 text-green-700 hover:bg-green-50 dark:border-green-400 dark:text-green-400"
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    {isAnalyzing ? "Validating..." : "Validate AC"}
-                  </Button>
-                  
-                  <Button
-                    onClick={() => analyzeWithLLM('defect-analysis')}
-                    disabled={isAnalyzing}
-                    size="sm"
-                    variant="outline"
-                    className="border-red-500 text-red-700 hover:bg-red-50 dark:border-red-400 dark:text-red-400"
-                  >
-                    <Brain className="w-4 h-4 mr-2" />
-                    {isAnalyzing ? "Analyzing..." : "Analyze Defects"}
-                  </Button>
+
+            {fetchedStory && (
+              <div className="space-y-4 p-4 bg-muted rounded-lg">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">{fetchedStory.title}</h4>
+                  <div className="flex items-center space-x-2">
+                    <Badge>{fetchedStory.status}</Badge>
+                    {fetchedStory.acceptanceCriteria.length > 0 && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        {fetchedStory.acceptanceCriteria.length} AC Found
+                      </Badge>
+                    )}
+                  </div>
                 </div>
+                
+                <p className="text-sm text-muted-foreground">{fetchedStory.description}</p>
+                
+                {fetchedStory.acceptanceCriteria && fetchedStory.acceptanceCriteria.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium mb-2 flex items-center space-x-2">
+                      <Target className="w-4 h-4" />
+                      <span>Extracted Acceptance Criteria:</span>
+                    </h5>
+                    <ul className="space-y-2">
+                      {fetchedStory.acceptanceCriteria.map((ac: string, index: number) => (
+                        <li key={index} className="text-sm pl-3 py-2 border-l-3 border-orange-500 bg-orange-50 dark:bg-orange-900/20 rounded-r">
+                          <span className="font-medium text-orange-700 dark:text-orange-400">AC{index + 1}:</span> {ac}
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    {/* AI Analysis Buttons */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button
+                        onClick={() => analyzeWithLLM('test-cases')}
+                        disabled={isAnalyzing}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Brain className="w-4 h-4 mr-2" />
+                        {isAnalyzing ? "Analyzing..." : "Generate Test Cases"}
+                      </Button>
+                      
+                      <Button
+                        onClick={() => analyzeWithLLM('validation')}
+                        disabled={isAnalyzing}
+                        size="sm"
+                        variant="outline"
+                        className="border-green-500 text-green-700 hover:bg-green-50 dark:border-green-400 dark:text-green-400"
+                      >
+                        <Target className="w-4 h-4 mr-2" />
+                        {isAnalyzing ? "Validating..." : "Validate AC"}
+                      </Button>
+                      
+                      <Button
+                        onClick={() => analyzeWithLLM('defect-analysis')}
+                        disabled={isAnalyzing}
+                        size="sm"
+                        variant="outline"
+                        className="border-red-500 text-red-700 hover:bg-red-50 dark:border-red-400 dark:text-red-400"
+                      >
+                        <Brain className="w-4 h-4 mr-2" />
+                        {isAnalyzing ? "Analyzing..." : "Analyze Defects"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {fetchedStory.assignee && (
+                  <p className="text-sm">
+                    <span className="font-medium">Assignee:</span> {fetchedStory.assignee}
+                  </p>
+                )}
               </div>
             )}
-            
-            {fetchedStory.assignee && (
-              <p className="text-sm">
-                <span className="font-medium">Assignee:</span> {fetchedStory.assignee}
-              </p>
-            )}
-          </div>
-        )}
 
-        <div className="text-xs text-muted-foreground">
-          <p>Enhanced JIRA integration with AI-powered acceptance criteria extraction and analysis.</p>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="text-xs text-muted-foreground">
+              <p>Enhanced JIRA integration with AI-powered acceptance criteria extraction and analysis.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

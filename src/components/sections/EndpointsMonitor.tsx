@@ -51,15 +51,17 @@ export function EndpointsMonitor() {
         config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
-      const endpointUrl = getToolEndpointUrl('endpoints-monitor', config);
+      // Use the correct endpoint path for SVC cluster
+      const endpointUrl = `${config.baseUrl}/endpoints`;
       console.log(`Fetching endpoints from: ${endpointUrl}`);
       
       const response = await fetch(endpointUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        mode: 'cors', // Explicitly set CORS mode
+        mode: 'cors',
       });
       
       if (!response.ok) {
@@ -68,7 +70,9 @@ export function EndpointsMonitor() {
       
       const data = await response.json();
       
-      const endpointsData: Endpoint[] = data.endpoints || [];
+      // Handle structured JSON data - adapt based on actual payload structure
+      const endpointsData: Endpoint[] = Array.isArray(data) ? data : (data.endpoints || []);
+      
       const teamNames = endpointsData
         .map((endpoint: Endpoint) => endpoint.team)
         .filter((team: string): team is string => typeof team === 'string' && team.length > 0);

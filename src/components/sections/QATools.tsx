@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { ToolsToolbar } from "./ToolsToolbar";
 import { ToolContent } from "./ToolContent";
 import { Tool } from "@/config/toolsConfig";
+import { AIProgressSpinner } from "@/components/ui/ai-progress-spinner";
 
 interface QAToolsProps {
   selectedTool?: Tool | null;
@@ -14,6 +15,7 @@ export function QATools({ selectedTool: externalSelectedTool, onToolSelect: exte
   const [importedFiles, setImportedFiles] = useState<File[]>([]);
   const [jiraStoryData, setJiraStoryData] = useState<any>(null);
   const [urlData, setUrlData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Use external selectedTool if provided, otherwise use internal state
   const selectedTool = externalSelectedTool !== undefined ? externalSelectedTool : internalSelectedTool;
@@ -28,23 +30,58 @@ export function QATools({ selectedTool: externalSelectedTool, onToolSelect: exte
     console.log('Opening configuration...');
   };
 
+  const handleJiraStoryFetched = (data: any) => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setJiraStoryData(data);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const handleUrlProcessed = (data: any) => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setUrlData(data);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const handleFilesProcessed = (files: File[]) => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setImportedFiles(files);
+      setIsLoading(false);
+    }, 1000);
+  };
+
   return (
     <div className="space-y-6">
+      {/* AI Progress Spinner */}
+      <AIProgressSpinner 
+        isVisible={isLoading} 
+        messages={[
+          "Processing your request...",
+          "Analyzing data...",
+          "Generating insights...",
+          "Finalizing results...",
+        ]}
+      />
+
       {/* Show toolbar only if no external tool selection is provided */}
-      {externalSelectedTool === undefined && (
+      {externalSelectedTool === undefined && !isLoading && (
         <ToolsToolbar selectedTool={selectedTool} onToolSelect={selectTool} />
       )}
 
       {/* Tool Content */}
-      {selectedTool && selectedTool.hasSpecialLayout && (
+      {selectedTool && selectedTool.hasSpecialLayout && !isLoading && (
         <ToolContent
           selectedTool={selectedTool}
           importedFiles={importedFiles}
           jiraStoryData={jiraStoryData}
           urlData={urlData}
-          onJiraStoryFetched={setJiraStoryData}
-          onUrlProcessed={setUrlData}
-          onFilesProcessed={setImportedFiles}
+          onJiraStoryFetched={handleJiraStoryFetched}
+          onUrlProcessed={handleUrlProcessed}
+          onFilesProcessed={handleFilesProcessed}
           onConfigOpen={handleConfigOpen}
         />
       )}
